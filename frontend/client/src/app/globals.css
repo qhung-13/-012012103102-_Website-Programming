@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  /* TRENDLAMA brand tokens */
+  --color-ink: #171416;
+  --color-ink-soft: #2b2628;
+  --color-paper: #faf9f6;
+  --color-paper-dim: #f1efe9;
+  --color-gold: #d8a93a;
+  --color-gold-dark: #b8871f;
+  --color-gold-soft: #f4e6c4;
+  --color-line: #e6e2d9;
+  --color-muted: #726e68;
+
+  --font-display: var(--font-bebas), sans-serif;
+  --font-sans: var(--font-geist-sans), sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+  }
+}
+
+/* Signature "hang-tag" motif: a punched dot + dashed thread, used next to
+   eyebrows, prices and labels throughout the site. */
+.tag-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tag-mark::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--color-gold);
+  flex-shrink: 0;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
