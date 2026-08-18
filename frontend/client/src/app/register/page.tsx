@@ -3,16 +3,33 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { ArrowRight, Lock, Mail, User } from "lucide-react";
+import useAuthStore, { ApiError } from "@/stores/authStore";
 
 const RegisterPage = () => {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const register = useAuthStore((s) => s.register);
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: hook up to auth API once backend is ready
-    toast.info("Backend chưa kết nối — form đăng ký đang chờ API.");
+    setLoading(true);
+    try {
+      await register(form.name, form.email, form.password);
+      toast.success("Account created! Welcome to TRENDLAMA.");
+      router.push("/");
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again.";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -97,7 +114,10 @@ const RegisterPage = () => {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="text-xs text-muted font-medium">
+            <label
+              htmlFor="password"
+              className="text-xs text-muted font-medium"
+            >
               Password
             </label>
             <div className="flex items-center gap-2 border border-line rounded-xl px-3 py-2.5 focus-within:border-gold-dark transition-colors">
@@ -108,9 +128,7 @@ const RegisterPage = () => {
                 required
                 placeholder="At least 8 characters"
                 value={form.password}
-                onChange={(e) =>
-                  setForm({ ...form, password: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="text-sm outline-none w-full"
               />
             </div>
@@ -118,9 +136,10 @@ const RegisterPage = () => {
 
           <button
             type="submit"
-            className="mt-2 w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2 text-sm font-medium"
+            disabled={loading}
+            className="mt-2 w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Create account
+            {loading ? "Creating account..." : "Create account"}
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
 

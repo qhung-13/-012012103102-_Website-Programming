@@ -3,16 +3,33 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { ArrowRight, Lock, Mail } from "lucide-react";
+import useAuthStore, { ApiError } from "@/stores/authStore";
 
 const LoginPage = () => {
   const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const login = useAuthStore((s) => s.login);
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: hook up to auth API once backend is ready
-    toast.info("Backend chưa kết nối — form đăng nhập đang chờ API.");
+    setLoading(true);
+    try {
+      await login(form.email, form.password);
+      toast.success("Signed in successfully!");
+      router.push("/");
+    } catch (err) {
+      const message =
+        err instanceof ApiError
+          ? err.message
+          : "Something went wrong. Please try again.";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -77,7 +94,10 @@ const LoginPage = () => {
 
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-xs text-muted font-medium">
+              <label
+                htmlFor="password"
+                className="text-xs text-muted font-medium"
+              >
                 Password
               </label>
               <Link href="/" className="text-xs text-muted hover:text-ink">
@@ -92,9 +112,7 @@ const LoginPage = () => {
                 required
                 placeholder="••••••••"
                 value={form.password}
-                onChange={(e) =>
-                  setForm({ ...form, password: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="text-sm outline-none w-full"
               />
             </div>
@@ -102,9 +120,10 @@ const LoginPage = () => {
 
           <button
             type="submit"
-            className="mt-2 w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2 text-sm font-medium"
+            disabled={loading}
+            className="mt-2 w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Sign in
+            {loading ? "Signing in..." : "Sign in"}
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </form>

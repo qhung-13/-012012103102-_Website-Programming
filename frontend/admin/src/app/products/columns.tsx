@@ -13,7 +13,7 @@ import {
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import { resolveImageUrl } from "@/lib/api";
 
 export type Product = {
   id: string | number;
@@ -21,12 +21,16 @@ export type Product = {
   name: string;
   shortDescription: string;
   description: string;
+  stock: number;
+  category_name: string | null;
   sizes: string[];
   colors: string[];
   images: Record<string, string>;
 };
 
-export const columns: ColumnDef<Product>[] = [
+export const getColumns = (
+  onDelete: (product: Product) => void,
+): ColumnDef<Product>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -50,14 +54,17 @@ export const columns: ColumnDef<Product>[] = [
     header: "Image",
     cell: ({ row }) => {
       const product = row.original;
+      const firstImage = product.images[product.colors[0]];
       return (
-        <div className="w-9 h-9 relative">
-          <Image
-            src={product.images[product.colors[0]]}
-            alt={product.name}
-            fill
-            className="rounded-full object-cover"
-          />
+        <div className="w-9 h-9 relative rounded-full overflow-hidden bg-muted">
+          {firstImage && (
+            <Image
+              src={resolveImageUrl(firstImage)}
+              alt={product.name}
+              fill
+              className="object-cover"
+            />
+          )}
         </div>
       );
     },
@@ -65,6 +72,11 @@ export const columns: ColumnDef<Product>[] = [
   {
     accessorKey: "name",
     header: "Name",
+  },
+  {
+    accessorKey: "category_name",
+    header: "Category",
+    cell: ({ row }) => row.original.category_name ?? "—",
   },
   {
     accessorKey: "price",
@@ -79,10 +91,11 @@ export const columns: ColumnDef<Product>[] = [
         </Button>
       );
     },
+    cell: ({ row }) => `$${Number(row.original.price).toFixed(2)}`,
   },
   {
-    accessorKey: "shortDescription",
-    header: "Description",
+    accessorKey: "stock",
+    header: "Stock",
   },
   {
     id: "actions",
@@ -100,13 +113,18 @@ export const columns: ColumnDef<Product>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(product.id.toString())}
+              onClick={() =>
+                navigator.clipboard.writeText(product.id.toString())
+              }
             >
               Copy product ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Link href={`/products/${product.id}`}>View customer</Link>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => onDelete(product)}
+            >
+              Delete product
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

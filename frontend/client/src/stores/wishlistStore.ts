@@ -38,8 +38,8 @@ const useWishlistStore = create<WishlistStateType & WishlistActionsType>()(
           state.hasHydrated = true;
         }
       },
-    }
-  )
+    },
+  ),
 );
 
 export default useWishlistStore;

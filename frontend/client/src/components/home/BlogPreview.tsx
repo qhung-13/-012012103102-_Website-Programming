@@ -1,9 +1,19 @@
 import BlogCard from "@/components/blog/BlogCard";
-import { blogPosts } from "@/data/blogPosts";
+import { apiFetch } from "@/lib/api";
+import { ApiBlogPostType, mapApiBlogPost } from "@/data/blogPosts";
 import Link from "next/link";
 
-const BlogPreview = () => {
-  const latestPosts = blogPosts.slice(0, 3);
+const BlogPreview = async () => {
+  let latestPosts: ReturnType<typeof mapApiBlogPost>[] = [];
+
+  try {
+    const res = await apiFetch<ApiBlogPostType[]>("/blog?limit=3");
+    latestPosts = res.data.map(mapApiBlogPost);
+  } catch {
+    return null; // don't break the homepage if the journal fails to load
+  }
+
+  if (latestPosts.length === 0) return null;
 
   return (
     <section className="my-20">

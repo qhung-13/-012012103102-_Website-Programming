@@ -1,7 +1,7 @@
 "use client";
 
 import { LogOut, Moon, Settings, Sun, User } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -14,6 +14,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import useAuthStore from "@/stores/authStore";
+import { toast } from "react-toastify";
 
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
@@ -25,6 +27,21 @@ const pageTitles: Record<string, string> = {
 const Navbar = () => {
   const { setTheme } = useTheme();
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    toast.success("Signed out.");
+    router.push("/login");
+  };
+
+  const initials = user?.name
+    ?.split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   const title =
     pageTitles[pathname] ??
@@ -65,12 +82,12 @@ const Navbar = () => {
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Avatar className="ring-2 ring-transparent hover:ring-gold/50 transition-all">
-              <AvatarImage src="https://avatars.githubusercontent.com/u/1486366" />
-              <AvatarFallback>JD</AvatarFallback>
+              <AvatarImage src={undefined} />
+              <AvatarFallback>{initials || "AD"}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent sideOffset={10} align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>{user?.name ?? "My Account"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
               <User className="h-[1.2rem] w-[1.2rem] mr-2" />
@@ -80,7 +97,7 @@ const Navbar = () => {
               <Settings className="h-[1.2rem] w-[1.2rem] mr-2" />
               Settings
             </DropdownMenuItem>
-            <DropdownMenuItem variant="destructive">
+            <DropdownMenuItem variant="destructive" onClick={handleLogout}>
               <LogOut className="h-[1.2rem] w-[1.2rem] mr-2" />
               Logout
             </DropdownMenuItem>

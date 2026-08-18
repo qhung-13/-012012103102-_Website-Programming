@@ -35,8 +35,8 @@ const TodoList = () => {
   const toggleTask = (id: number) => {
     setTasks((prev) =>
       prev.map((task) =>
-        task.id === id ? { ...task, done: !task.done } : task
-      )
+        task.id === id ? { ...task, done: !task.done } : task,
+      ),
     );
   };
 

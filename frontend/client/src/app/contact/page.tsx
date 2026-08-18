@@ -42,8 +42,8 @@ const ContactPage = () => {
           We&apos;d Love to Hear From You
         </h1>
         <p className="text-muted text-sm max-w-md mx-auto mt-3">
-          Questions about an order, sizing, or a partnership? Send us a
-          message and we&apos;ll get back within 1-2 business days.
+          Questions about an order, sizing, or a partnership? Send us a message
+          and we&apos;ll get back within 1-2 business days.
         </p>
       </div>
 

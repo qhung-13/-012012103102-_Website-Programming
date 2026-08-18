@@ -1,12 +1,23 @@
 import BlogCard from "@/components/blog/BlogCard";
-import { blogPosts } from "@/data/blogPosts";
+import { apiFetch } from "@/lib/api";
+import { ApiBlogPostType, mapApiBlogPost } from "@/data/blogPosts";
 
 export const metadata = {
   title: "Journal — TRENDLAMA",
   description: "Style guides, care tips and stories from Trendlama.",
 };
 
-const BlogPage = () => {
+const BlogPage = async () => {
+  let posts: ReturnType<typeof mapApiBlogPost>[] = [];
+  let hasError = false;
+
+  try {
+    const res = await apiFetch<ApiBlogPostType[]>("/blog?limit=24");
+    posts = res.data.map(mapApiBlogPost);
+  } catch {
+    hasError = true;
+  }
+
   return (
     <div className="mt-8 mb-16">
       <div className="mb-8 text-center">
@@ -17,15 +28,24 @@ const BlogPage = () => {
           Stories & Style Guides
         </h1>
         <p className="text-muted text-sm max-w-md mx-auto mt-3">
-          Care tips, lookbooks, and everything behind the making of
-          Trendlama.
+          Care tips, lookbooks, and everything behind the making of Trendlama.
         </p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-        {blogPosts.map((post) => (
-          <BlogCard key={post.slug} post={post} />
-        ))}
-      </div>
+      {hasError ? (
+        <p className="text-sm text-muted text-center py-12">
+          Couldn&apos;t load the journal right now. Please try again later.
+        </p>
+      ) : posts.length === 0 ? (
+        <p className="text-sm text-muted text-center py-12">
+          No posts published yet — check back soon.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          {posts.map((post) => (
+            <BlogCard key={post.slug} post={post} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

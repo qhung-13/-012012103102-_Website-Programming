@@ -1,9 +1,31 @@
 import BlogCard from "@/components/blog/BlogCard";
-import { blogPosts } from "@/data/blogPosts";
+import { apiFetch, resolveImageUrl } from "@/lib/api";
+import { ApiBlogPostType, mapApiBlogPost } from "@/data/blogPosts";
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
+async function getPost(slug: string) {
+  try {
+    const res = await apiFetch<ApiBlogPostType>(`/blog/${slug}`);
+    return mapApiBlogPost(res.data);
+  } catch {
+    return null;
+  }
+}
+
+async function getRelatedPosts(excludeSlug: string) {
+  try {
+    const res = await apiFetch<ApiBlogPostType[]>("/blog?limit=3");
+    return res.data
+      .map(mapApiBlogPost)
+      .filter((p) => p.slug !== excludeSlug)
+      .slice(0, 2);
+  } catch {
+    return [];
+  }
+}
 
 export const generateMetadata = async ({
   params,
@@ -11,7 +33,7 @@ export const generateMetadata = async ({
   params: Promise<{ slug: string }>;
 }) => {
   const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
+  const post = await getPost(slug);
   if (!post) return {};
   return {
     title: `${post.title} — TRENDLAMA Journal`,
@@ -25,13 +47,11 @@ const BlogPostPage = async ({
   params: Promise<{ slug: string }>;
 }) => {
   const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
+  const post = await getPost(slug);
 
   if (!post) return notFound();
 
-  const relatedPosts = blogPosts
-    .filter((p) => p.slug !== post.slug)
-    .slice(0, 2);
+  const relatedPosts = await getRelatedPosts(post.slug);
 
   return (
     <article className="mt-8 mb-16 max-w-2xl mx-auto">
@@ -49,31 +69,30 @@ const BlogPostPage = async ({
       <h1 className="font-display text-4xl sm:text-5xl tracking-wide mt-2 leading-[1.02]">
         {post.title}
       </h1>
-      <p className="text-xs text-muted font-mono mt-3">
-        {new Date(post.date).toLocaleDateString("en-US", {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        })}{" "}
-        · {post.readTime}
-      </p>
+      {post.date && (
+        <p className="text-xs text-muted font-mono mt-3">
+          {new Date(post.date).toLocaleDateString("en-US", {
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+          })}
+        </p>
+      )}
 
       <div className="relative aspect-[16/9] rounded-3xl overflow-hidden bg-paper-dim mt-6">
         <Image
-          src={post.cover}
+          src={post.cover ? resolveImageUrl(post.cover) : "/featured.png"}
           alt={post.title}
           fill
           className="object-contain p-8"
         />
       </div>
 
-      <div className="flex flex-col gap-4 mt-8">
-        {post.content.map((paragraph, i) => (
-          <p key={i} className="text-sm sm:text-base text-ink/80 leading-relaxed">
-            {paragraph}
-          </p>
-        ))}
-      </div>
+      {/* Content is HTML authored by the admin's rich text editor. */}
+      <div
+        className="prose-blog flex flex-col gap-4 mt-8 text-sm sm:text-base text-ink/80 leading-relaxed [&_p]:mb-4 [&_h2]:font-display [&_h2]:text-2xl [&_h2]:tracking-wide [&_h2]:text-ink [&_a]:underline"
+        dangerouslySetInnerHTML={{ __html: post.content }}
+      />
 
       {relatedPosts.length > 0 && (
         <div className="mt-16">

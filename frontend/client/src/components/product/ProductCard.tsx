@@ -3,6 +3,7 @@
 import useCartStore from "@/stores/cartStore";
 import useWishlistStore from "@/stores/wishlistStore";
 import { ProductType } from "@/types";
+import { resolveImageUrl } from "@/lib/api";
 import { Heart, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -34,9 +35,7 @@ const ProductCard = ({ product }: { product: ProductType }) => {
 
   const handleToggleWishlist = () => {
     toggleWishlist(product);
-    toast.success(
-      wishlisted ? "Removed from wishlist" : "Added to wishlist"
-    );
+    toast.success(wishlisted ? "Removed from wishlist" : "Added to wishlist");
   };
 
   const handleProductType = ({
@@ -65,10 +64,10 @@ const ProductCard = ({ product }: { product: ProductType }) => {
   return (
     <div className="relative group bg-white rounded-2xl border border-line overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
       {/* IMAGE */}
-      <Link href={`/products/${product.id}`}>
+      <Link href={`/products/${product.slug ?? product.id}`}>
         <div className="relative aspect-[2/3] bg-paper-dim">
           <Image
-            src={product.images[productTypes.color]}
+            src={resolveImageUrl(product.images[productTypes.color])}
             alt={product.name}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"

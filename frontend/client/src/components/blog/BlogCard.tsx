@@ -1,4 +1,5 @@
 import { BlogPostType } from "@/data/blogPosts";
+import { resolveImageUrl } from "@/lib/api";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -10,7 +11,7 @@ const BlogCard = ({ post }: { post: BlogPostType }) => {
     >
       <div className="relative aspect-[16/10] bg-paper-dim">
         <Image
-          src={post.cover}
+          src={post.cover ? resolveImageUrl(post.cover) : "/featured.png"}
           alt={post.title}
           fill
           className="object-contain p-6 group-hover:scale-105 transition-transform duration-300"
@@ -20,14 +21,15 @@ const BlogCard = ({ post }: { post: BlogPostType }) => {
         </span>
       </div>
       <div className="flex flex-col gap-2 px-5 pb-5">
-        <p className="text-xs text-muted font-mono">
-          {new Date(post.date).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}{" "}
-          · {post.readTime}
-        </p>
+        {post.date && (
+          <p className="text-xs text-muted font-mono">
+            {new Date(post.date).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+        )}
         <h3 className="font-medium leading-snug group-hover:text-gold-dark transition-colors">
           {post.title}
         </h3>

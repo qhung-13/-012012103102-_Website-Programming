@@ -1,36 +1,28 @@
 import ProductInteraction from "@/components/product/ProductInteraction";
-import { ProductType } from "@/types";
+import { apiFetch, resolveImageUrl } from "@/lib/api";
+import { ApiProductType, mapApiProduct } from "@/types";
 import Image from "next/image";
+import { notFound } from "next/navigation";
 
-// TEMPORARY
-const product: ProductType = {
-  id: 1,
-  name: "Adidas CoreFit T-Shirt",
-  shortDescription:
-    "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-  description:
-    "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-  price: 59.9,
-  sizes: ["xs", "s", "m", "l", "xl"],
-  colors: ["gray", "purple", "green"],
-  images: {
-    gray: "/products/1g.png",
-    purple: "/products/1p.png",
-    green: "/products/1gr.png",
-  },
-  category: "t-shirts",
-};
+async function getProduct(idOrSlug: string) {
+  try {
+    const res = await apiFetch<ApiProductType>(`/products/${idOrSlug}`);
+    return mapApiProduct(res.data);
+  } catch {
+    return null;
+  }
+}
 
 export const generateMetadata = async ({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) => {
-  // TODO: get the product from db
-  // TEMPORARY
-  await params;
+  const { id } = await params;
+  const product = await getProduct(id);
+  if (!product) return {};
   return {
-    title: product.name,
+    title: `${product.name} — TRENDLAMA`,
     description: product.description,
   };
 };
@@ -42,16 +34,22 @@ const ProductPage = async ({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ color: string; size: string }>;
 }) => {
+  const { id } = await params;
   const { size, color } = await searchParams;
+
+  const product = await getProduct(id);
+
+  if (!product) return notFound();
 
   const selectedSize = size || (product.sizes[0] as string);
   const selectedColor = color || (product.colors[0] as string);
+
   return (
     <div className="flex flex-col gap-8 lg:flex-row lg:gap-16 mt-8">
       {/* IMAGE */}
       <div className="w-full lg:w-1/2 relative aspect-[4/5] rounded-3xl overflow-hidden bg-paper-dim">
         <Image
-          src={product.images[selectedColor]}
+          src={resolveImageUrl(product.images[selectedColor])}
           alt={product.name}
           fill
           className="object-contain p-6"
@@ -65,9 +63,7 @@ const ProductPage = async ({
         <span className="tag-mark text-xs uppercase tracking-[0.2em] text-muted font-mono">
           TrendLama Original
         </span>
-        <h1 className="font-display text-4xl tracking-wide">
-          {product.name}
-        </h1>
+        <h1 className="font-display text-4xl tracking-wide">{product.name}</h1>
         <p className="text-muted text-sm leading-relaxed">
           {product.description}
         </p>

@@ -1,121 +1,75 @@
-import { Product, columns } from "./columns";
-import { DataTable } from "./data-table";
+"use client";
 
-const getData = async (): Promise<Product[]> => {
-  return [
-    {
-      id: 1,
-      name: "Adidas CoreFit T-Shirt",
-      shortDescription:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      description:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      price: 39.9,
-      sizes: ["s", "m", "l", "xl", "xxl"],
-      colors: ["gray", "purple", "green"],
-      images: {
-        gray: "/products/1g.png",
-        purple: "/products/1p.png",
-        green: "/products/1gr.png",
-      },
-    },
-    {
-      id: 2,
-      name: "Puma Ultra Warm Zip",
-      shortDescription:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      description:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      price: 59.9,
-      sizes: ["s", "m", "l", "xl"],
-      colors: ["gray", "green"],
-      images: { gray: "/products/2g.png", green: "/products/2gr.png" },
-    },
-    {
-      id: 3,
-      name: "Nike Air Essentials Pullover",
-      shortDescription:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      description:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      price: 69.9,
-      sizes: ["s", "m", "l"],
-      colors: ["green", "blue", "black"],
-      images: {
-        green: "/products/3gr.png",
-        blue: "/products/3b.png",
-        black: "/products/3bl.png",
-      },
-    },
-    {
-      id: 4,
-      name: "Nike Dri Flex T-Shirt",
-      shortDescription:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      description:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      price: 29.9,
-      sizes: ["s", "m", "l"],
-      colors: ["white", "pink"],
-      images: { white: "/products/4w.png", pink: "/products/4p.png" },
-    },
-    {
-      id: 5,
-      name: "Under Armour StormFleece",
-      shortDescription:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      description:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      price: 49.9,
-      sizes: ["s", "m", "l"],
-      colors: ["red", "orange", "black"],
-      images: {
-        red: "/products/5r.png",
-        orange: "/products/5o.png",
-        black: "/products/5bl.png",
-      },
-    },
-    {
-      id: 6,
-      name: "Nike Air Max 270",
-      shortDescription:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      description:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      price: 59.9,
-      sizes: ["40", "42", "43", "44"],
-      colors: ["gray", "white"],
-      images: { gray: "/products/6g.png", white: "/products/6w.png" },
-    },
-    {
-      id: 7,
-      name: "Nike Ultraboost Pulse ",
-      shortDescription:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      description:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      price: 69.9,
-      sizes: ["40", "42", "43"],
-      colors: ["gray", "pink"],
-      images: { gray: "/products/7g.png", pink: "/products/7p.png" },
-    },
-    {
-      id: 8,
-      name: "Levi’s Classic Denim",
-      shortDescription:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      description:
-        "Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit. Lorem ipsum dolor sit amet consect adipisicing elit lorem ipsum dolor sit.",
-      price: 59.9,
-      sizes: ["s", "m", "l"],
-      colors: ["blue", "green"],
-      images: { blue: "/products/8b.png", green: "/products/8gr.png" },
-    },
-  ];
+import { useEffect, useState, useCallback } from "react";
+import { Product, getColumns } from "./columns";
+import { DataTable } from "./data-table";
+import useAuthStore from "@/stores/authStore";
+import { apiFetch, ApiError } from "@/lib/api";
+import { toast } from "react-toastify";
+import { Loader2 } from "lucide-react";
+
+type ApiProduct = {
+  id: number;
+  name: string;
+  short_description: string | null;
+  description: string | null;
+  price: number;
+  stock: number;
+  category_name: string | null;
+  sizes: string[];
+  colors: string[];
+  images: Record<string, string>;
 };
 
-const PaymentsPage = async () => {
-  const data = await getData();
+const mapProduct = (p: ApiProduct): Product => ({
+  id: p.id,
+  name: p.name,
+  shortDescription: p.short_description ?? "",
+  description: p.description ?? "",
+  price: Number(p.price),
+  stock: p.stock,
+  category_name: p.category_name,
+  sizes: p.sizes ?? [],
+  colors: p.colors ?? [],
+  images: p.images ?? {},
+});
+
+const ProductsPage = () => {
+  const { token } = useAuthStore();
+  const [data, setData] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch<ApiProduct[]>("/products?limit=48", { token });
+      setData(res.data.map(mapProduct));
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Failed to load products.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleDelete = async (product: Product) => {
+    if (!confirm(`Delete "${product.name}"? This cannot be undone.`)) return;
+    try {
+      await apiFetch(`/products/${product.id}`, { method: "DELETE", token });
+      toast.success("Product deleted.");
+      setData((prev) => prev.filter((p) => p.id !== product.id));
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Failed to delete product.",
+      );
+    }
+  };
+
   return (
     <div className="py-4">
       <div className="mb-6">
@@ -124,9 +78,15 @@ const PaymentsPage = async () => {
           Manage your catalog — {data.length} products total.
         </p>
       </div>
-      <DataTable columns={columns} data={data} />
+      {loading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground py-12 justify-center">
+          <Loader2 className="w-4 h-4 animate-spin" /> Loading products...
+        </div>
+      ) : (
+        <DataTable columns={getColumns(handleDelete)} data={data} />
+      )}
     </div>
   );
 };
 
-export default PaymentsPage;
+export default ProductsPage;

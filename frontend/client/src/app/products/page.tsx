@@ -3,9 +3,9 @@ import ProductList from "@/components/product/ProductList";
 const ProductsPage = async ({
   searchParams,
 }: {
-  searchParams: Promise<{ category: string; sort?: string }>;
+  searchParams: Promise<{ category: string; sort?: string; page?: string }>;
 }) => {
-  const { category, sort } = await searchParams;
+  const { category, sort, page } = await searchParams;
   return (
     <div className="mt-8">
       <div className="mb-6">
@@ -18,7 +18,12 @@ const ProductsPage = async ({
             : "All Products"}
         </h1>
       </div>
-      <ProductList category={category} sort={sort} params="products" />
+      <ProductList
+        category={category}
+        sort={sort}
+        page={page}
+        params="products"
+      />
     </div>
   );
 };

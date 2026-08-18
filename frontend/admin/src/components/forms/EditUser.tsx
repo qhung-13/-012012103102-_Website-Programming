@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetHeader,
@@ -20,36 +21,67 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useRef } from "react";
+import useAuthStore from "@/stores/authStore";
+import { apiFetch, ApiError } from "@/lib/api";
+import { toast } from "react-toastify";
 
 const formSchema = z.object({
   fullName: z
     .string()
     .min(2, { message: "Full name must be at least 2 characters!" })
     .max(50),
-  email: z.string().email({ message: "Invalid email address!" }),
-  phone: z.string().min(10).max(15),
-  address: z.string().min(2),
-  city: z.string().min(2),
+  phone: z.string().optional(),
+  address: z.string().optional(),
 });
 
-const EditUser = () => {
+type EditUserProps = {
+  userId: string | number;
+  defaultValues: {
+    fullName: string;
+    phone: string;
+    address: string;
+  };
+  onUpdated?: () => void;
+};
+
+const EditUser = ({ userId, defaultValues, onUpdated }: EditUserProps) => {
+  const { token } = useAuthStore();
+  const closeRef = useRef<HTMLButtonElement>(null);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      fullName: "John Doe",
-      email: "john.doe@gmail.com",
-      phone: "+1 234 5678",
-      address: "123 Main St",
-      city: "New York",
-    },
+    defaultValues,
   });
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    try {
+      await apiFetch(`/users/${userId}`, {
+        method: "PUT",
+        token,
+        body: {
+          name: values.fullName,
+          phone: values.phone || null,
+          address: values.address || null,
+        },
+      });
+      toast.success("User updated.");
+      onUpdated?.();
+      closeRef.current?.click();
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Failed to update user.",
+      );
+    }
+  };
+
   return (
     <SheetContent>
       <SheetHeader>
         <SheetTitle className="mb-4">Edit User</SheetTitle>
         <SheetDescription asChild>
           <Form {...form}>
-            <form className="space-y-8">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <FormField
                 control={form.control}
                 name="fullName"
@@ -59,25 +91,6 @@ const EditUser = () => {
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Enter user full name.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Only admin can see your email.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -91,9 +104,7 @@ const EditUser = () => {
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Only admin can see your phone number (optional)
-                    </FormDescription>
+                    <FormDescription>Optional.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -107,34 +118,19 @@ const EditUser = () => {
                     <FormControl>
                       <Input {...field} />
                     </FormControl>
-                    <FormDescription>
-                      Enter user address (optional)
-                    </FormDescription>
+                    <FormDescription>Optional.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Enter user city (optional)
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit">Submit</Button>
+              <Button type="submit" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Saving..." : "Submit"}
+              </Button>
             </form>
           </Form>
         </SheetDescription>
       </SheetHeader>
+      <SheetClose ref={closeRef} className="hidden" />
     </SheetContent>
   );
 };

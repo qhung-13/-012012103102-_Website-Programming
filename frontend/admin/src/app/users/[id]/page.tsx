@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,15 +13,76 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { Progress } from "@/components/ui/progress";
-import { BadgeCheck, Candy, Citrus, Shield } from "lucide-react";
+import { BadgeCheck, Shield, Loader2 } from "lucide-react";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import EditUser from "@/components/forms/EditUser";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AppLineChart from "@/components/dashboard/AppLineChart";
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import useAuthStore from "@/stores/authStore";
+import { apiFetch, ApiError } from "@/lib/api";
+import { toast } from "react-toastify";
+
+type ApiUser = {
+  id: number;
+  name: string;
+  email: string;
+  role: "admin" | "customer";
+  phone: string | null;
+  address: string | null;
+  status: "active" | "blocked";
+  created_at: string;
+};
 
 const SingleUserPage = () => {
+  const { id } = useParams<{ id: string }>();
+  const { token } = useAuthStore();
+  const [user, setUser] = useState<ApiUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch<ApiUser>(`/users/${id}`, { token });
+      setUser(res.data);
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Failed to load user.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [id, token]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground py-16 justify-center">
+        <Loader2 className="w-4 h-4 animate-spin" /> Loading user...
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <p className="text-sm text-muted-foreground text-center py-16">
+        User not found.
+      </p>
+    );
+  }
+
+  const initials = user.name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
   return (
     <div className="">
       <Breadcrumb>
@@ -33,7 +96,7 @@ const SingleUserPage = () => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>John Doe</BreadcrumbPage>
+            <BreadcrumbPage>{user.name}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -53,71 +116,44 @@ const SingleUserPage = () => {
                   />
                 </HoverCardTrigger>
                 <HoverCardContent>
-                  <h1 className="font-bold mb-2">Verified User</h1>
+                  <h1 className="font-bold mb-2">
+                    {user.status === "active" ? "Active Account" : "Blocked"}
+                  </h1>
                   <p className="text-sm text-muted-foreground">
-                    This user has been verified by the admin.
+                    Current account status.
                   </p>
                 </HoverCardContent>
               </HoverCard>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Shield
-                    size={36}
-                    className="rounded-full bg-green-800/30 border-1 border-green-800/50 p-2"
-                  />
-                </HoverCardTrigger>
-                <HoverCardContent>
-                  <h1 className="font-bold mb-2">Admin</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Admin users have access to all features and can manage
-                    users.
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Candy
-                    size={36}
-                    className="rounded-full bg-yellow-500/30 border-1 border-yellow-500/50 p-2"
-                  />
-                </HoverCardTrigger>
-                <HoverCardContent>
-                  <h1 className="font-bold mb-2">Awarded</h1>
-                  <p className="text-sm text-muted-foreground">
-                    This user has been awarded for their contributions.
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
-              <HoverCard>
-                <HoverCardTrigger>
-                  <Citrus
-                    size={36}
-                    className="rounded-full bg-orange-500/30 border-1 border-orange-500/50 p-2"
-                  />
-                </HoverCardTrigger>
-                <HoverCardContent>
-                  <h1 className="font-bold mb-2">Popular</h1>
-                  <p className="text-sm text-muted-foreground">
-                    This user has been popular in the community.
-                  </p>
-                </HoverCardContent>
-              </HoverCard>
+              {user.role === "admin" && (
+                <HoverCard>
+                  <HoverCardTrigger>
+                    <Shield
+                      size={36}
+                      className="rounded-full bg-green-800/30 border-1 border-green-800/50 p-2"
+                    />
+                  </HoverCardTrigger>
+                  <HoverCardContent>
+                    <h1 className="font-bold mb-2">Admin</h1>
+                    <p className="text-sm text-muted-foreground">
+                      Admin users have access to all features and can manage
+                      users.
+                    </p>
+                  </HoverCardContent>
+                </HoverCard>
+              )}
             </div>
           </div>
           {/* USER CARD CONTAINER */}
           <div className="bg-card border p-4 rounded-2xl space-y-2">
             <div className="flex items-center gap-2">
               <Avatar className="size-12">
-                <AvatarImage src="https://avatars.githubusercontent.com/u/1486366" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarImage src={undefined} />
+                <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
-              <h1 className="text-xl font-semibold">John Doe</h1>
+              <h1 className="text-xl font-semibold">{user.name}</h1>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Lorem ipsum dolor, sit amet consectetur adipisicing elit. Vel
-              voluptas distinctio ab ipsa commodi fugiat labore quos veritatis
-              cum corrupti sed repudiandae ipsum, harum recusandae ratione ipsam
-              in, quis quia.
+            <p className="text-sm text-muted-foreground capitalize">
+              {user.role} · {user.status}
             </p>
           </div>
           {/* INFORMATION CONTAINER */}
@@ -128,45 +164,42 @@ const SingleUserPage = () => {
                 <SheetTrigger asChild>
                   <Button>Edit User</Button>
                 </SheetTrigger>
-                <EditUser />
+                <EditUser
+                  userId={user.id}
+                  defaultValues={{
+                    fullName: user.name,
+                    phone: user.phone ?? "",
+                    address: user.address ?? "",
+                  }}
+                  onUpdated={load}
+                />
               </Sheet>
             </div>
             <div className="space-y-4 mt-4">
-              <div className="flex flex-col gap-2 mb-8">
-                <p className="text-sm text-muted-foreground">
-                  Profile completion
-                </p>
-                <Progress value={66} />
-              </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Full name:</span>
-                <span>John Doe</span>
+                <span>{user.name}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Email:</span>
-                <span>john.doe@gmail.com</span>
+                <span>{user.email}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Phone:</span>
-                <span>+1 234 5678</span>
+                <span>{user.phone || "—"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="font-bold">Address:</span>
-                <span>123 Main St</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold">City:</span>
-                <span>New York</span>
+                <span>{user.address || "—"}</span>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              Joined on 2025.01.01
+              Joined on {new Date(user.created_at).toLocaleDateString()}
             </p>
           </div>
         </div>
         {/* RIGHT */}
         <div className="w-full xl:w-2/3 space-y-6">
-          
           {/* CHART CONTAINER */}
           <div className="bg-card border p-4 rounded-2xl">
             <h1 className="text-xl font-semibold">User Activity</h1>

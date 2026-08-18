@@ -27,7 +27,9 @@ import {
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import useAuthStore from "@/stores/authStore";
+import { toast } from "react-toastify";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +44,14 @@ import AddProduct from "@/components/forms/AddProduct";
 
 const AppSidebar = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    toast.success("Signed out.");
+    router.push("/login");
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -51,7 +61,12 @@ const AppSidebar = () => {
             <SidebarMenuButton asChild className="hover:bg-sidebar-accent">
               <Link href="/" className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-full bg-gold flex items-center justify-center shrink-0">
-                  <Image src="/logo.svg" alt="TrendLama" width={18} height={18} />
+                  <Image
+                    src="/logo.svg"
+                    alt="TrendLama"
+                    width={18}
+                    height={18}
+                  />
                 </div>
                 <span className="font-semibold tracking-wide">
                   TRENDLAMA
@@ -90,7 +105,10 @@ const AppSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/products")}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/products")}
+                >
                   <Link href="/products">
                     <Shirt />
                     All Products
@@ -139,7 +157,10 @@ const AppSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/users")}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/users")}
+                >
                   <Link href="/users">
                     <UsersIcon />
                     All Users
@@ -173,7 +194,10 @@ const AppSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/payments")}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/payments")}
+                >
                   <Link href="/payments">
                     <CreditCard />
                     All Payments
@@ -205,7 +229,8 @@ const AppSidebar = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
-                  <User2 /> John Doe <ChevronUp className="ml-auto" />
+                  <User2 /> {user?.name ?? "Account"}{" "}
+                  <ChevronUp className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -214,7 +239,9 @@ const AppSidebar = () => {
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuItem>Sign out</DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  Sign out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

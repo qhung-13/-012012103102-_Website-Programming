@@ -21,10 +21,13 @@ export type User = {
   avatar: string;
   fullName: string;
   email: string;
-  status: "active" | "inactive";
+  role: "admin" | "customer";
+  status: "active" | "blocked";
 };
 
-export const columns: ColumnDef<User>[] = [
+export const getColumns = (
+  onDelete: (user: User) => void,
+): ColumnDef<User>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -54,6 +57,7 @@ export const columns: ColumnDef<User>[] = [
             src={user.avatar}
             alt={user.fullName}
             fill
+            unoptimized
             className="rounded-full object-cover"
           />
         </div>
@@ -79,6 +83,20 @@ export const columns: ColumnDef<User>[] = [
     },
   },
   {
+    accessorKey: "role",
+    header: "Role",
+    cell: ({ row }) => (
+      <div
+        className={cn(
+          "p-1 rounded-md w-max text-xs capitalize",
+          row.original.role === "admin" ? "bg-gold/30" : "bg-muted",
+        )}
+      >
+        {row.original.role}
+      </div>
+    ),
+  },
+  {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
@@ -87,9 +105,9 @@ export const columns: ColumnDef<User>[] = [
       return (
         <div
           className={cn(
-            `p-1 rounded-md w-max text-xs`,
+            `p-1 rounded-md w-max text-xs capitalize`,
             status === "active" && "bg-green-500/40",
-            status === "inactive" && "bg-red-500/40"
+            status === "blocked" && "bg-red-500/40",
           )}
         >
           {status as string}
@@ -118,8 +136,14 @@ export const columns: ColumnDef<User>[] = [
               Copy user ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <Link href={`/users/${user.id}`}>View customer</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => onDelete(user)}
+            >
+              Delete user
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

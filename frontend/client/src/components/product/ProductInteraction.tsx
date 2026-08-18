@@ -95,7 +95,9 @@ const ProductInteraction = ({
               aria-label={color}
               onClick={() => handleTypeChange("color", color)}
               className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-colors cursor-pointer ${
-                selectedColor === color ? "border-gold-dark" : "border-transparent"
+                selectedColor === color
+                  ? "border-gold-dark"
+                  : "border-transparent"
               }`}
             >
               <span

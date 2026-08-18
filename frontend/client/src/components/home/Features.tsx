@@ -32,9 +32,7 @@ const Features = () => {
             {feature.icon}
           </div>
           <div>
-            <p className="text-sm font-medium leading-tight">
-              {feature.title}
-            </p>
+            <p className="text-sm font-medium leading-tight">{feature.title}</p>
             <p className="text-xs text-muted mt-0.5">{feature.desc}</p>
           </div>
         </div>

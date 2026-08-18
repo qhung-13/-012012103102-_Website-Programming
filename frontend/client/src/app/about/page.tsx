@@ -38,14 +38,19 @@ const AboutPage = () => {
             REAL DAYS.
           </h1>
           <p className="text-muted text-sm leading-relaxed max-w-md">
-            Trendlama started in 2021 as a small streetwear line out of a
-            single studio. Today it&apos;s grown into a full wardrobe — but the
-            goal hasn&apos;t changed: make pieces good enough to wear on repeat,
+            Trendlama started in 2021 as a small streetwear line out of a single
+            studio. Today it&apos;s grown into a full wardrobe — but the goal
+            hasn&apos;t changed: make pieces good enough to wear on repeat,
             priced fairly, and built to actually last.
           </p>
         </div>
         <div className="md:col-span-6 relative aspect-[4/3] rounded-3xl overflow-hidden bg-paper-dim">
-          <Image src="/featured.png" alt="Trendlama studio" fill className="object-cover" />
+          <Image
+            src="/featured.png"
+            alt="Trendlama studio"
+            fill
+            className="object-cover"
+          />
         </div>
       </section>
 

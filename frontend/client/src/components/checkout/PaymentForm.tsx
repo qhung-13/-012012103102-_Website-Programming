@@ -1,11 +1,16 @@
 import { PaymentFormInputs, paymentFormSchema } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRight, ShoppingCart } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
 
-const PaymentForm = () => {
+const PaymentForm = ({
+  onSubmit,
+  loading,
+}: {
+  onSubmit: (data: PaymentFormInputs) => void;
+  loading?: boolean;
+}) => {
   const {
     register,
     handleSubmit,
@@ -14,10 +19,8 @@ const PaymentForm = () => {
     resolver: zodResolver(paymentFormSchema),
   });
 
-  const router = useRouter();
-
   const handlePaymentForm: SubmitHandler<PaymentFormInputs> = (data) => {
-    
+    onSubmit(data);
   };
 
   return (
@@ -56,7 +59,10 @@ const PaymentForm = () => {
         )}
       </div>
       <div className="flex flex-col gap-1">
-        <label htmlFor="expirationDate" className="text-xs text-muted font-medium">
+        <label
+          htmlFor="expirationDate"
+          className="text-xs text-muted font-medium"
+        >
           Expiration Date
         </label>
         <input
@@ -67,7 +73,9 @@ const PaymentForm = () => {
           {...register("expirationDate")}
         />
         {errors.expirationDate && (
-          <p className="text-xs text-red-500">{errors.expirationDate.message}</p>
+          <p className="text-xs text-red-500">
+            {errors.expirationDate.message}
+          </p>
         )}
       </div>
       <div className="flex flex-col gap-1">
@@ -85,16 +93,35 @@ const PaymentForm = () => {
           <p className="text-xs text-red-500">{errors.cvv.message}</p>
         )}
       </div>
-      <div className='flex items-center gap-2 mt-4'>
-        <Image src="/klarna.png" alt="klarna" width={50} height={25} className="rounded-md"/>
-        <Image src="/cards.png" alt="cards" width={50} height={25} className="rounded-md"/>
-        <Image src="/stripe.png" alt="stripe" width={50} height={25} className="rounded-md"/>
+      <div className="flex items-center gap-2 mt-4">
+        <Image
+          src="/klarna.png"
+          alt="klarna"
+          width={50}
+          height={25}
+          className="rounded-md"
+        />
+        <Image
+          src="/cards.png"
+          alt="cards"
+          width={50}
+          height={25}
+          className="rounded-md"
+        />
+        <Image
+          src="/stripe.png"
+          alt="stripe"
+          width={50}
+          height={25}
+          className="rounded-md"
+        />
       </div>
       <button
         type="submit"
-        className="w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2"
+        disabled={loading}
+        className="w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        Checkout
+        {loading ? "Placing order..." : "Checkout"}
         <ShoppingCart className="w-3 h-3" />
       </button>
     </form>
