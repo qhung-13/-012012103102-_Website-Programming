@@ -14,6 +14,8 @@ require_once __DIR__ . '/core/Response.php';
 require_once __DIR__ . '/core/Request.php';
 require_once __DIR__ . '/core/JWT.php';
 require_once __DIR__ . '/core/Router.php';
+require_once __DIR__ . '/core/Slugger.php';
+require_once __DIR__ . '/core/ContentSanitizer.php';
 require_once __DIR__ . '/middleware/AuthMiddleware.php';
 
 require_once __DIR__ . '/controllers/AuthController.php';
@@ -24,6 +26,12 @@ require_once __DIR__ . '/controllers/OrderController.php';
 require_once __DIR__ . '/controllers/BlogController.php';
 require_once __DIR__ . '/controllers/WishlistController.php';
 require_once __DIR__ . '/controllers/UploadController.php';
+require_once __DIR__ . '/controllers/MarketingController.php';
+require_once __DIR__ . '/controllers/DashboardController.php';
+
+$debug = filter_var(env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOL);
+ini_set('display_errors', $debug ? '1' : '0');
+ini_set('log_errors', '1');
 
 applyCors();
 
@@ -37,9 +45,10 @@ if (php_sapi_name() === 'cli-server') {
 }
 
 set_exception_handler(function (Throwable $e) {
-    $debug = env('APP_DEBUG', 'false') === 'true';
+    $debug = filter_var(env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOL);
+    error_log($e->__toString());
     Response::error(
-        $debug ? $e->getMessage() : 'Internal server error.',
+        $debug ? $e->getMessage() : 'Lỗi máy chủ nội bộ.',
         500,
         $debug ? ['trace' => $e->getTraceAsString()] : null
     );
