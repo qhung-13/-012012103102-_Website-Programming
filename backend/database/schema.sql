@@ -3,10 +3,10 @@
 -- Run this once to create the database and all tables.
 -- =========================================================
 
-CREATE DATABASE IF NOT EXISTS trendlama
+CREATE DATABASE IF NOT EXISTS rozbux
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE trendlama;
+USE rozbux;
 
 -- ---------------------------------------------------------
 -- USERS
@@ -23,6 +23,15 @@ CREATE TABLE users (
   status ENUM('active', 'blocked') NOT NULL DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE auth_login_attempts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(150) NOT NULL,
+  ip_hash CHAR(64) NOT NULL,
+  attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_login_email_time (email, attempted_at),
+  INDEX idx_login_ip_time (ip_hash, attempted_at)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------
@@ -52,7 +61,9 @@ CREATE TABLE products (
   status ENUM('active', 'draft') NOT NULL DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
+  FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
+  INDEX idx_products_status_created (status, created_at),
+  INDEX idx_products_category_status (category_id, status)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------
@@ -84,10 +95,12 @@ CREATE TABLE orders (
   shipping_email VARCHAR(150) NOT NULL,
   shipping_phone VARCHAR(20) NOT NULL,
   shipping_address VARCHAR(255) NOT NULL,
-  payment_method VARCHAR(50) DEFAULT 'card',
+  payment_method VARCHAR(50) DEFAULT 'cod',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_orders_user_created (user_id, created_at),
+  INDEX idx_orders_status_created (status, created_at)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------
@@ -123,7 +136,8 @@ CREATE TABLE blog_posts (
   published_at TIMESTAMP NULL DEFAULT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_blog_status_published (status, published_at)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------
@@ -136,4 +150,26 @@ CREATE TABLE wishlists (
   PRIMARY KEY (user_id, product_id),
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------
+-- NEWSLETTER / CONTACT
+-- ---------------------------------------------------------
+CREATE TABLE newsletter_subscribers (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(150) NOT NULL UNIQUE,
+  status ENUM('active', 'unsubscribed') NOT NULL DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+CREATE TABLE contact_messages (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  email VARCHAR(150) NOT NULL,
+  subject VARCHAR(200) NOT NULL,
+  message TEXT NOT NULL,
+  status ENUM('new', 'read', 'resolved') NOT NULL DEFAULT 'new',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_contact_status_created (status, created_at)
 ) ENGINE=InnoDB;
