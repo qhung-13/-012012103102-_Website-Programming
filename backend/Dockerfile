@@ -1,14 +1,19 @@
 FROM php:8.3-apache
 
-RUN docker-php-ext-install pdo pdo_mysql mysqli
+RUN docker-php-ext-install pdo_mysql \
+    && a2enmod rewrite headers expires
 
-RUN a2enmod rewrite
-
+WORKDIR /var/www/html
 COPY . /var/www/html/
+COPY docker-entrypoint.sh /usr/local/bin/trendlama-entrypoint
+COPY uploads/.htaccess /usr/local/share/trendlama-upload.htaccess
 
-RUN echo "Listen 10000" > /etc/apache2/ports.conf \
-    && sed -i 's/<VirtualHost \*:80>/<VirtualHost *:10000>/' /etc/apache2/sites-available/000-default.conf
+RUN find /var/www/html -type d -exec chmod 0755 {} \; \
+    && find /var/www/html -type f -exec chmod 0644 {} \; \
+    && chmod 0755 /usr/local/bin/trendlama-entrypoint \
+    && chown -R www-data:www-data /var/www/html/uploads
 
+ENV PORT=10000
 EXPOSE 10000
 
-CMD ["apache2-foreground"]
+CMD ["trendlama-entrypoint"]
