@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+README.md
+database/*.log
+uploads/products/*
+uploads/blog/*
+uploads/avatars/*
+!uploads/products/.gitkeep
+!uploads/blog/.gitkeep
+!uploads/avatars/.gitkeep
+!uploads/.htaccess
