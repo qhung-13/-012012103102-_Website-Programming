@@ -48,7 +48,7 @@ class Router
         $path = trim(parse_url($uri, PHP_URL_PATH), '/');
         // Strip a leading "api" or "backend/api" prefix so this works
         // whether the app is served from the domain root or a subfolder.
-        $path = preg_replace('#^(backend/)?api/#', '', $path);
+        $path = preg_replace('#^(backend/)?api(?:/|$)#', '', $path);
 
         foreach ($this->routes as $route) {
             if ($route['method'] !== $method) {
@@ -56,12 +56,16 @@ class Router
             }
             if (preg_match($route['pattern'], $path, $matches)) {
                 array_shift($matches);
-                $params = array_combine($route['paramNames'], $matches);
-                call_user_func($route['handler'], $params);
+                $params = $route['paramNames'] ? array_combine($route['paramNames'], $matches) : [];
+                if ($params) {
+                    call_user_func($route['handler'], $params);
+                } else {
+                    call_user_func($route['handler']);
+                }
                 return;
             }
         }
 
-        Response::error('Route not found: ' . $method . ' /' . $path, 404);
+        Response::error('Không tìm thấy API: ' . $method . ' /' . $path, 404);
     }
 }
