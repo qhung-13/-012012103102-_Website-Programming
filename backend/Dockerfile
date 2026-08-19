@@ -5,8 +5,8 @@ RUN docker-php-ext-install pdo_mysql \
 
 WORKDIR /var/www/html
 COPY . /var/www/html/
-COPY docker-entrypoint.sh /usr/local/bin/trendlama-entrypoint
-COPY uploads/.htaccess /usr/local/share/trendlama-upload.htaccess
+COPY backend/docker-entrypoint.sh /usr/local/bin/trendlama-entrypoint
+COPY backend/uploads/.htaccess /usr/local/share/trendlama-upload.htaccess
 
 RUN find /var/www/html -type d -exec chmod 0755 {} \; \
     && find /var/www/html -type f -exec chmod 0644 {} \; \
