@@ -18,7 +18,15 @@ class Request
 
         if (str_contains($contentType, 'application/json')) {
             $raw = file_get_contents('php://input');
-            self::$body = json_decode($raw, true) ?? [];
+            if ($raw === '' || $raw === false) {
+                self::$body = [];
+            } else {
+                $decoded = json_decode($raw, true);
+                if (!is_array($decoded) || json_last_error() !== JSON_ERROR_NONE) {
+                    Response::error('Nội dung JSON không hợp lệ.', 400);
+                }
+                self::$body = $decoded;
+            }
         } else {
             // multipart/form-data (file uploads) or urlencoded
             self::$body = $_POST;
@@ -32,6 +40,13 @@ class Request
         return self::body()[$key] ?? $default;
     }
 
+    /** Returns only genuine string input; arrays/objects never become the literal word "Array". */
+    public static function string(string $key, ?string $default = ''): ?string
+    {
+        $value = self::input($key, $default);
+        return is_string($value) ? $value : $default;
+    }
+
     public static function query(string $key, $default = null)
     {
         return $_GET[$key] ?? $default;
@@ -43,7 +58,7 @@ class Request
             ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
             ?? '';
 
-        if (preg_match('/Bearer\s+(\S+)/', $header, $matches)) {
+        if (preg_match('/^Bearer\s+([A-Za-z0-9._~-]+)$/i', trim($header), $matches)) {
             return $matches[1];
         }
 
