@@ -35,7 +35,7 @@ class UserController
         $id = (int) $params['id'];
 
         if ($current['role'] !== 'admin' && (int) $current['sub'] !== $id) {
-            Response::error('Forbidden.', 403);
+            Response::error('Bạn không có quyền xem người dùng này.', 403);
         }
 
         $pdo = getDbConnection();
@@ -46,7 +46,7 @@ class UserController
         $user = $stmt->fetch();
 
         if (!$user) {
-            Response::error('User not found.', 404);
+            Response::error('Không tìm thấy người dùng.', 404);
         }
 
         Response::success($user);
@@ -58,29 +58,40 @@ class UserController
         Auth::requireAdmin();
         $pdo = getDbConnection();
 
-        $name = trim((string) Request::input('name'));
-        $email = strtolower(trim((string) Request::input('email')));
-        $password = (string) Request::input('password');
+        $name = trim(Request::string('name') ?? '');
+        $email = strtolower(trim(Request::string('email') ?? ''));
+        $password = Request::string('password') ?? '';
         $role = Request::input('role', 'customer');
+        $phone = trim(Request::string('phone') ?? '');
+        $address = trim(Request::string('address') ?? '');
 
         $errors = [];
-        if (strlen($name) < 2) $errors['name'] = 'Name is required.';
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = 'Invalid email.';
-        if (strlen($password) < 6) $errors['password'] = 'Password must be at least 6 characters.';
-        if (!in_array($role, ['admin', 'customer'], true)) $errors['role'] = 'Invalid role.';
+        if (strlen($name) < 2 || strlen($name) > 150) $errors['name'] = 'Họ tên phải có từ 2 đến 150 ký tự.';
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 150) $errors['email'] = 'Email không hợp lệ.';
+        if (strlen($password) < 8 || strlen($password) > 72) $errors['password'] = 'Mật khẩu phải có từ 8 đến 72 ký tự.';
+        if (!in_array($role, ['admin', 'customer'], true)) $errors['role'] = 'Vai trò không hợp lệ.';
+        if ($phone !== '' && !preg_match('/^[0-9+() .-]{8,20}$/', $phone)) $errors['phone'] = 'Số điện thoại không hợp lệ.';
+        if (strlen($address) > 255) $errors['address'] = 'Địa chỉ không được dài quá 255 ký tự.';
 
         if ($errors) {
-            Response::error('Validation failed.', 422, $errors);
+            Response::error('Dữ liệu người dùng chưa hợp lệ.', 422, $errors);
         }
 
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
         $stmt->execute([$email]);
         if ($stmt->fetch()) {
-            Response::error('An account with this email already exists.', 409);
+            Response::error('Email này đã được đăng ký.', 409);
         }
 
-        $stmt = $pdo->prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)');
-        $stmt->execute([$name, $email, password_hash($password, PASSWORD_BCRYPT), $role]);
+        $stmt = $pdo->prepare('INSERT INTO users (name, email, password, role, phone, address) VALUES (?, ?, ?, ?, ?, ?)');
+        try {
+            $stmt->execute([$name, $email, password_hash($password, PASSWORD_BCRYPT), $role, $phone ?: null, $address ?: null]);
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000') {
+                Response::error('Email này đã được đăng ký.', 409);
+            }
+            throw $e;
+        }
 
         self::show(['id' => (int) $pdo->lastInsertId()]);
     }
@@ -93,17 +104,68 @@ class UserController
         $isAdmin = $current['role'] === 'admin';
 
         if (!$isAdmin && (int) $current['sub'] !== $id) {
-            Response::error('Forbidden.', 403);
+            Response::error('Bạn không có quyền sửa người dùng này.', 403);
         }
 
         $pdo = getDbConnection();
+        $existsStmt = $pdo->prepare('SELECT id FROM users WHERE id = ?');
+        $existsStmt->execute([$id]);
+        if (!$existsStmt->fetch()) {
+            Response::error('Không tìm thấy người dùng.', 404);
+        }
+
         $fields = [];
         $values = [];
+
+        $errors = [];
+        if (Request::input('name') !== null) {
+            $name = trim(Request::string('name') ?? '');
+            if (strlen($name) < 2 || strlen($name) > 150) $errors['name'] = 'Họ tên phải có từ 2 đến 150 ký tự.';
+        }
+        if (Request::input('phone') !== null) {
+            $phone = trim(Request::string('phone') ?? '');
+            if (!is_string(Request::input('phone'))) {
+                $errors['phone'] = 'Số điện thoại phải là văn bản.';
+            } elseif ($phone !== '' && !preg_match('/^[0-9+() .-]{8,20}$/', $phone)) {
+                $errors['phone'] = 'Số điện thoại không hợp lệ.';
+            }
+        }
+        if (Request::input('address') !== null) {
+            if (!is_string(Request::input('address'))) {
+                $errors['address'] = 'Địa chỉ phải là văn bản.';
+            } elseif (strlen(trim(Request::string('address') ?? '')) > 255) {
+                $errors['address'] = 'Địa chỉ không được dài quá 255 ký tự.';
+            }
+        }
+        if ($isAdmin && Request::input('role') !== null && !in_array(Request::input('role'), ['admin', 'customer'], true)) {
+            $errors['role'] = 'Vai trò không hợp lệ.';
+        }
+        if ($isAdmin && Request::input('status') !== null && !in_array(Request::input('status'), ['active', 'blocked'], true)) {
+            $errors['status'] = 'Trạng thái không hợp lệ.';
+        }
+        if ($isAdmin && (int) $current['sub'] === $id) {
+            if (Request::input('role') !== null && Request::input('role') !== 'admin') {
+                $errors['role'] = 'Bạn không thể tự hạ quyền tài khoản đang đăng nhập.';
+            }
+            if (Request::input('status') !== null && Request::input('status') !== 'active') {
+                $errors['status'] = 'Bạn không thể tự khóa tài khoản đang đăng nhập.';
+            }
+        }
+        if (Request::input('password') !== null && Request::input('password') !== '' && (
+            !is_string(Request::input('password'))
+            || strlen(Request::string('password') ?? '') < 8
+            || strlen(Request::string('password') ?? '') > 72
+        )) {
+            $errors['password'] = 'Mật khẩu phải có từ 8 đến 72 ký tự.';
+        }
+        if ($errors) {
+            Response::error('Dữ liệu người dùng chưa hợp lệ.', 422, $errors);
+        }
 
         foreach (['name', 'phone', 'address'] as $field) {
             if (Request::input($field) !== null) {
                 $fields[] = "$field = ?";
-                $values[] = Request::input($field);
+                $values[] = trim(Request::string($field) ?? '');
             }
         }
 
@@ -116,9 +178,9 @@ class UserController
             }
         }
 
-        if (Request::input('password')) {
+        if (is_string(Request::input('password')) && Request::input('password') !== '') {
             $fields[] = 'password = ?';
-            $values[] = password_hash((string) Request::input('password'), PASSWORD_BCRYPT);
+            $values[] = password_hash(Request::string('password') ?? '', PASSWORD_BCRYPT);
         }
 
         if ($fields) {
@@ -133,10 +195,17 @@ class UserController
     /** DELETE /api/users/{id} — admin only */
     public static function destroy(array $params): void
     {
-        Auth::requireAdmin();
+        $current = Auth::requireAdmin();
         $pdo = getDbConnection();
+        $id = (int) $params['id'];
+        if ((int) $current['sub'] === $id) {
+            Response::error('Bạn không thể tự xóa tài khoản quản trị đang đăng nhập.', 422);
+        }
         $stmt = $pdo->prepare('DELETE FROM users WHERE id = ?');
-        $stmt->execute([(int) $params['id']]);
-        Response::success(null, 'User deleted.');
+        $stmt->execute([$id]);
+        if ($stmt->rowCount() === 0) {
+            Response::error('Không tìm thấy người dùng.', 404);
+        }
+        Response::success(null, 'Đã xóa người dùng.');
     }
 }
