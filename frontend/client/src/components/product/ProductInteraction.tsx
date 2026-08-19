@@ -6,6 +6,7 @@ import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import { formatColor } from "@/lib/localization";
 
 const colorSwatch: Record<string, string> = {
   gray: "#9ca3af",
@@ -17,6 +18,10 @@ const colorSwatch: Record<string, string> = {
   pink: "#ec4899",
   red: "#ef4444",
   orange: "#f97316",
+  yellow: "#eab308",
+  brown: "#92400e",
+  navy: "#1e3a8a",
+  tortoise: "#8b5e3c",
 };
 
 const ProductInteraction = ({
@@ -43,7 +48,7 @@ const ProductInteraction = ({
 
   const handleQuantityChange = (type: "increment" | "decrement") => {
     if (type === "increment") {
-      setQuantity((prev) => prev + 1);
+      setQuantity((prev) => Math.min(prev + 1, Math.max(product.stock, 1)));
     } else {
       if (quantity > 1) {
         setQuantity((prev) => prev - 1);
@@ -58,19 +63,25 @@ const ProductInteraction = ({
       selectedColor,
       selectedSize,
     });
-    toast.success("Product added to cart");
+    toast.success("Đã thêm sản phẩm vào giỏ hàng.");
+  };
+
+  const handleBuyNow = () => {
+    handleAddToCart();
+    router.push("/cart?step=2");
   };
   return (
     <div className="flex flex-col gap-5 mt-2">
       {/* SIZE */}
       <div className="flex flex-col gap-2">
         <span className="text-xs text-muted uppercase tracking-wider">
-          Size
+          Kích cỡ
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {product.sizes.map((size) => (
             <button
               key={size}
+              aria-label={`Chọn kích cỡ ${size.toUpperCase()}`}
               onClick={() => handleTypeChange("size", size)}
               className={`w-9 h-9 rounded-full text-xs font-medium flex items-center justify-center border transition-colors cursor-pointer ${
                 selectedSize === size
@@ -86,13 +97,13 @@ const ProductInteraction = ({
       {/* COLOR */}
       <div className="flex flex-col gap-2">
         <span className="text-xs text-muted uppercase tracking-wider">
-          Color
+          Màu sắc
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {product.colors.map((color) => (
             <button
               key={color}
-              aria-label={color}
+              aria-label={`Chọn màu ${formatColor(color)}`}
               onClick={() => handleTypeChange("color", color)}
               className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-colors cursor-pointer ${
                 selectedColor === color
@@ -111,12 +122,13 @@ const ProductInteraction = ({
       {/* QUANTITY */}
       <div className="flex flex-col gap-2">
         <span className="text-xs text-muted uppercase tracking-wider">
-          Quantity
+          Số lượng
         </span>
         <div className="flex items-center gap-3">
           <button
             className="cursor-pointer w-8 h-8 rounded-full border border-line flex items-center justify-center hover:border-ink/40 transition-colors"
             onClick={() => handleQuantityChange("decrement")}
+            aria-label="Giảm số lượng"
           >
             <Minus className="w-3.5 h-3.5" />
           </button>
@@ -124,6 +136,7 @@ const ProductInteraction = ({
           <button
             className="cursor-pointer w-8 h-8 rounded-full border border-line flex items-center justify-center hover:border-ink/40 transition-colors"
             onClick={() => handleQuantityChange("increment")}
+            aria-label="Tăng số lượng"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
@@ -132,13 +145,18 @@ const ProductInteraction = ({
       {/* BUTTONS */}
       <button
         onClick={handleAddToCart}
-        className="bg-ink text-paper px-4 py-3 rounded-full flex items-center justify-center gap-2 cursor-pointer text-sm font-medium hover:bg-gold-dark transition-colors"
+        disabled={product.stock < 1}
+        className="bg-ink text-paper px-4 py-3 rounded-full flex items-center justify-center gap-2 cursor-pointer text-sm font-medium hover:bg-gold-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <ShoppingBag className="w-4 h-4" />
-        Add to Cart
+        {product.stock < 1 ? "Tạm hết hàng" : "Thêm vào giỏ"}
       </button>
-      <button className="border border-ink text-ink px-4 py-3 rounded-full flex items-center justify-center cursor-pointer gap-2 text-sm font-medium hover:bg-ink hover:text-paper transition-colors">
-        Buy this Item
+      <button
+        onClick={handleBuyNow}
+        disabled={product.stock < 1}
+        className="border border-ink text-ink px-4 py-3 rounded-full flex items-center justify-center cursor-pointer gap-2 text-sm font-medium hover:bg-ink hover:text-paper transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Mua ngay
       </button>
     </div>
   );

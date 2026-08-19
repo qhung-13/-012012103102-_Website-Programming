@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Payment, getColumns } from "./columns";
 import { DataTable } from "./data-table";
 import useAuthStore from "@/stores/authStore";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, apiFetchAll, ApiError } from "@/lib/api";
 import { toast } from "react-toastify";
 import { Loader2 } from "lucide-react";
 
@@ -23,6 +23,13 @@ const mapOrder = (o: ApiOrder): Payment => ({
   status: o.status,
   amount: Number(o.total),
 });
+const statusLabels: Record<Payment["status"], string> = {
+  pending: "Chờ xác nhận",
+  processing: "Đang xử lý",
+  success: "Hoàn tất",
+  failed: "Thất bại",
+  cancelled: "Đã hủy",
+};
 
 const PaymentsPage = () => {
   const { token } = useAuthStore();
@@ -32,11 +39,13 @@ const PaymentsPage = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiFetch<ApiOrder[]>("/orders?limit=100", { token });
-      setData(res.data.map(mapOrder));
+      const orders = await apiFetchAll<ApiOrder>("/orders?limit=100", {
+        token,
+      });
+      setData(orders.map(mapOrder));
     } catch (err) {
       toast.error(
-        err instanceof ApiError ? err.message : "Failed to load orders.",
+        err instanceof ApiError ? err.message : "Không thể tải đơn hàng.",
       );
     } finally {
       setLoading(false);
@@ -45,6 +54,11 @@ const PaymentsPage = () => {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  useEffect(() => {
+    window.addEventListener("trendlama:orders-changed", load);
+    return () => window.removeEventListener("trendlama:orders-changed", load);
   }, [load]);
 
   const handleStatusChange = async (
@@ -61,44 +75,67 @@ const PaymentsPage = () => {
         token,
         body: { status },
       });
-      toast.success(`Order #${payment.id} marked as ${status}.`);
+      toast.success(
+        `Đơn #${payment.id} đã chuyển sang “${statusLabels[status]}”.`,
+      );
     } catch (err) {
       setData(previous);
       toast.error(
-        err instanceof ApiError ? err.message : "Failed to update order.",
+        err instanceof ApiError ? err.message : "Không thể cập nhật đơn hàng.",
       );
     }
   };
 
   const handleDelete = async (payment: Payment) => {
-    if (!confirm(`Delete order #${payment.id}? This cannot be undone.`)) return;
+    if (
+      !confirm(`Xóa đơn hàng #${payment.id}? Thao tác này không thể hoàn tác.`)
+    )
+      return;
     try {
       await apiFetch(`/orders/${payment.id}`, { method: "DELETE", token });
-      toast.success("Order deleted.");
+      toast.success("Đã xóa đơn hàng.");
       setData((prev) => prev.filter((p) => p.id !== payment.id));
     } catch (err) {
       toast.error(
-        err instanceof ApiError ? err.message : "Failed to delete order.",
+        err instanceof ApiError ? err.message : "Không thể xóa đơn hàng.",
       );
     }
+  };
+
+  const handleBulkDelete = async (payments: Payment[]) => {
+    if (!confirm(`Xóa ${payments.length} đơn hàng đã chọn?`)) return;
+    const results = await Promise.allSettled(
+      payments.map((payment) =>
+        apiFetch(`/orders/${payment.id}`, { method: "DELETE", token }),
+      ),
+    );
+    const failed = results.filter(
+      (result) => result.status === "rejected",
+    ).length;
+    await load();
+    if (failed) toast.error(`Không thể xóa ${failed} đơn hàng.`);
+    else toast.success(`Đã xóa ${payments.length} đơn hàng.`);
   };
 
   return (
     <div className="py-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">All Payments</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          Tất cả đơn hàng
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {data.length} transactions recorded.
+          Có {data.length} đơn hàng được ghi nhận.
         </p>
       </div>
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground py-12 justify-center">
-          <Loader2 className="w-4 h-4 animate-spin" /> Loading orders...
+          <Loader2 className="w-4 h-4 animate-spin" /> Đang tải đơn hàng...
         </div>
       ) : (
         <DataTable
           columns={getColumns(handleStatusChange, handleDelete)}
           data={data}
+          onDeleteSelected={handleBulkDelete}
         />
       )}
     </div>

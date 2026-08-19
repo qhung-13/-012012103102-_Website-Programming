@@ -2,6 +2,7 @@
 
 import {
   SheetContent,
+  SheetClose,
   SheetDescription,
   SheetHeader,
   SheetTitle,
@@ -23,15 +24,19 @@ import { Button } from "@/components/ui/button";
 import useAuthStore from "@/stores/authStore";
 import { apiFetch, ApiError } from "@/lib/api";
 import { toast } from "react-toastify";
-import { useRouter } from "next/navigation";
+import { useRef } from "react";
 
 const formSchema = z.object({
-  name: z.string().min(1, { message: "Name is Required!" }),
+  name: z
+    .string()
+    .trim()
+    .min(2, { message: "Tên danh mục phải có ít nhất 2 ký tự." })
+    .max(100, "Tên danh mục quá dài."),
 });
 
 const AddCategory = ({ onCreated }: { onCreated?: () => void }) => {
   const { token } = useAuthStore();
-  const router = useRouter();
+  const closeRef = useRef<HTMLButtonElement>(null);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: "" },
@@ -44,13 +49,14 @@ const AddCategory = ({ onCreated }: { onCreated?: () => void }) => {
         token,
         body: values,
       });
-      toast.success("Category created.");
+      toast.success("Đã tạo danh mục.");
       form.reset();
       onCreated?.();
-      router.refresh();
+      window.dispatchEvent(new Event("trendlama:categories-changed"));
+      closeRef.current?.click();
     } catch (err) {
       toast.error(
-        err instanceof ApiError ? err.message : "Failed to create category.",
+        err instanceof ApiError ? err.message : "Không thể tạo danh mục.",
       );
     }
   };
@@ -58,31 +64,35 @@ const AddCategory = ({ onCreated }: { onCreated?: () => void }) => {
   return (
     <SheetContent>
       <SheetHeader>
-        <SheetTitle className="mb-4">Add Category</SheetTitle>
-        <SheetDescription asChild>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormDescription>Enter category name.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : "Submit"}
-              </Button>
-            </form>
-          </Form>
+        <SheetTitle className="mb-4">Thêm danh mục</SheetTitle>
+        <SheetDescription>
+          Tạo một nhóm sản phẩm mới cho cửa hàng.
         </SheetDescription>
       </SheetHeader>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-6">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Tên danh mục</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormDescription>
+                  Nhập tên hiển thị của danh mục.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? "Đang lưu..." : "Tạo danh mục"}
+          </Button>
+        </form>
+      </Form>
+      <SheetClose ref={closeRef} className="hidden" />
     </SheetContent>
   );
 };

@@ -3,19 +3,19 @@ import { Star } from "lucide-react";
 const testimonials = [
   {
     name: "Minh Anh",
-    role: "Verified Buyer",
+    role: "Khách hàng đã mua",
     quote:
       "Vải dày dặn, form áo đúng như hình, giao hàng nhanh hơn dự kiến 2 ngày. Chắc chắn sẽ quay lại mua tiếp.",
   },
   {
     name: "Duy Khang",
-    role: "Verified Buyer",
+    role: "Khách hàng đã mua",
     quote:
       "Đôi giày mình đặt đi êm chân, đóng gói cẩn thận. Đổi size cũng nhanh gọn không rườm rà.",
   },
   {
     name: "Thu Trang",
-    role: "Verified Buyer",
+    role: "Khách hàng đã mua",
     quote:
       "Thích nhất là phần theo dõi đơn hàng rõ ràng, và chất lượng sản phẩm đúng như mô tả trên web.",
   },
@@ -26,10 +26,10 @@ const Testimonials = () => {
     <section className="my-20">
       <div className="text-center mb-10">
         <span className="tag-mark text-xs uppercase tracking-[0.2em] text-muted font-mono justify-center">
-          Loved by customers
+          Được khách hàng yêu thích
         </span>
         <h2 className="font-display text-3xl sm:text-4xl tracking-wide mt-1">
-          What people are saying
+          Khách hàng nói gì
         </h2>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

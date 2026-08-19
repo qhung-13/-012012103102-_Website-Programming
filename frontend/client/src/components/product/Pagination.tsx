@@ -6,22 +6,25 @@ const Pagination = ({
   totalPages,
   category,
   sort,
+  search,
 }: {
   currentPage: number;
   totalPages: number;
   category?: string;
   sort?: string;
+  search?: string;
 }) => {
   const buildHref = (page: number) => {
     const params = new URLSearchParams();
     if (category && category !== "all") params.set("category", category);
     if (sort) params.set("sort", sort);
+    if (search) params.set("search", search);
     params.set("page", String(page));
     return `?${params.toString()}`;
   };
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
-    (p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1
+    (p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1,
   );
 
   return (
@@ -29,7 +32,7 @@ const Pagination = ({
       <PageLink
         href={buildHref(currentPage - 1)}
         disabled={currentPage <= 1}
-        aria-label="Previous page"
+        aria-label="Trang trước"
       >
         <ChevronLeft className="w-4 h-4" />
       </PageLink>
@@ -48,7 +51,7 @@ const Pagination = ({
       <PageLink
         href={buildHref(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        aria-label="Next page"
+        aria-label="Trang sau"
       >
         <ChevronRight className="w-4 h-4" />
       </PageLink>

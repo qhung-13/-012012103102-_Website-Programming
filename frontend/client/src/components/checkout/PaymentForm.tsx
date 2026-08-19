@@ -1,7 +1,6 @@
 import { PaymentFormInputs, paymentFormSchema } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ShoppingCart } from "lucide-react";
-import Image from "next/image";
+import { Banknote, Building2, ShoppingCart } from "lucide-react";
 import { SubmitHandler, useForm } from "react-hook-form";
 
 const PaymentForm = ({
@@ -11,117 +10,62 @@ const PaymentForm = ({
   onSubmit: (data: PaymentFormInputs) => void;
   loading?: boolean;
 }) => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<PaymentFormInputs>({
+  const { register, handleSubmit } = useForm<PaymentFormInputs>({
     resolver: zodResolver(paymentFormSchema),
+    defaultValues: { paymentMethod: "cod" },
   });
-
-  const handlePaymentForm: SubmitHandler<PaymentFormInputs> = (data) => {
+  const handlePaymentForm: SubmitHandler<PaymentFormInputs> = (data) =>
     onSubmit(data);
-  };
 
   return (
     <form
       className="flex flex-col gap-4"
       onSubmit={handleSubmit(handlePaymentForm)}
     >
-      <div className="flex flex-col gap-1">
-        <label htmlFor="cardHolder" className="text-xs text-muted font-medium">
-          Name on card
-        </label>
+      <p className="text-sm text-muted">
+        Chọn cách thanh toán. TRENDLAMA không thu thập thông tin thẻ trên trang
+        này.
+      </p>
+      <label className="flex items-start gap-3 rounded-2xl border border-line p-4 cursor-pointer has-[:checked]:border-ink">
         <input
-          className="border-b border-line py-2 outline-none text-sm"
-          type="text"
-          id="cardHolder"
-          placeholder="John Doe"
-          {...register("cardHolder")}
+          type="radio"
+          value="cod"
+          className="mt-1"
+          {...register("paymentMethod")}
         />
-        {errors.cardHolder && (
-          <p className="text-xs text-red-500">{errors.cardHolder.message}</p>
-        )}
-      </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="cardNumber" className="text-xs text-muted font-medium">
-          Card Number
-        </label>
+        <Banknote className="w-5 h-5 shrink-0" />
+        <span>
+          <span className="block text-sm font-medium">
+            Thanh toán khi nhận hàng
+          </span>
+          <span className="block text-xs text-muted mt-0.5">
+            Thanh toán cho đơn vị giao hàng khi nhận sản phẩm.
+          </span>
+        </span>
+      </label>
+      <label className="flex items-start gap-3 rounded-2xl border border-line p-4 cursor-pointer has-[:checked]:border-ink">
         <input
-          className="border-b border-line py-2 outline-none text-sm"
-          type="text"
-          id="cardNumber"
-          placeholder="123456789123"
-          {...register("cardNumber")}
+          type="radio"
+          value="bank_transfer"
+          className="mt-1"
+          {...register("paymentMethod")}
         />
-        {errors.cardNumber && (
-          <p className="text-xs text-red-500">{errors.cardNumber.message}</p>
-        )}
-      </div>
-      <div className="flex flex-col gap-1">
-        <label
-          htmlFor="expirationDate"
-          className="text-xs text-muted font-medium"
-        >
-          Expiration Date
-        </label>
-        <input
-          className="border-b border-line py-2 outline-none text-sm"
-          type="text"
-          id="expirationDate"
-          placeholder="01/32"
-          {...register("expirationDate")}
-        />
-        {errors.expirationDate && (
-          <p className="text-xs text-red-500">
-            {errors.expirationDate.message}
-          </p>
-        )}
-      </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="cvv" className="text-xs text-muted font-medium">
-          CVV
-        </label>
-        <input
-          className="border-b border-line py-2 outline-none text-sm"
-          type="text"
-          id="cvv"
-          placeholder="123"
-          {...register("cvv")}
-        />
-        {errors.cvv && (
-          <p className="text-xs text-red-500">{errors.cvv.message}</p>
-        )}
-      </div>
-      <div className="flex items-center gap-2 mt-4">
-        <Image
-          src="/klarna.png"
-          alt="klarna"
-          width={50}
-          height={25}
-          className="rounded-md"
-        />
-        <Image
-          src="/cards.png"
-          alt="cards"
-          width={50}
-          height={25}
-          className="rounded-md"
-        />
-        <Image
-          src="/stripe.png"
-          alt="stripe"
-          width={50}
-          height={25}
-          className="rounded-md"
-        />
-      </div>
+        <Building2 className="w-5 h-5 shrink-0" />
+        <span>
+          <span className="block text-sm font-medium">
+            Chuyển khoản ngân hàng
+          </span>
+          <span className="block text-xs text-muted mt-0.5">
+            Nhân viên sẽ gửi thông tin chuyển khoản sau khi xác nhận đơn.
+          </span>
+        </span>
+      </label>
       <button
         type="submit"
         disabled={loading}
         className="w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {loading ? "Placing order..." : "Checkout"}
+        {loading ? "Đang tạo đơn..." : "Xác nhận đặt hàng"}
         <ShoppingCart className="w-3 h-3" />
       </button>
     </form>

@@ -31,13 +31,13 @@ const ShippingForm = ({
     >
       <div className="flex flex-col gap-1">
         <label htmlFor="name" className="text-xs text-muted font-medium">
-          Name
+          Họ và tên
         </label>
         <input
           className="border-b border-line py-2 outline-none text-sm"
           type="text"
           id="name"
-          placeholder="John Doe"
+          placeholder="Nguyễn Văn An"
           {...register("name")}
         />
         {errors.name && (
@@ -61,13 +61,13 @@ const ShippingForm = ({
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="phone" className="text-xs text-muted font-medium">
-          Phone
+          Số điện thoại
         </label>
         <input
           className="border-b border-line py-2 outline-none text-sm"
           type="text"
           id="phone"
-          placeholder="123456789"
+          placeholder="0901 234 567"
           {...register("phone")}
         />
         {errors.phone && (
@@ -76,13 +76,13 @@ const ShippingForm = ({
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="address" className="text-xs text-muted font-medium">
-          Address
+          Địa chỉ
         </label>
         <input
           className="border-b border-line py-2 outline-none text-sm"
           type="text"
           id="address"
-          placeholder="123 Main St, Anytown"
+          placeholder="123 đường Nguyễn Huệ, Quận 1"
           {...register("address")}
         />
         {errors.address && (
@@ -91,13 +91,13 @@ const ShippingForm = ({
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor="city" className="text-xs text-muted font-medium">
-          City
+          Tỉnh/Thành phố
         </label>
         <input
           className="border-b border-line py-2 outline-none text-sm"
           type="text"
           id="city"
-          placeholder="New York"
+          placeholder="TP. Hồ Chí Minh"
           {...register("city")}
         />
         {errors.city && (
@@ -108,7 +108,7 @@ const ShippingForm = ({
         type="submit"
         className="w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2"
       >
-        Continue
+        Tiếp tục
         <ArrowRight className="w-3 h-3" />
       </button>
     </form>

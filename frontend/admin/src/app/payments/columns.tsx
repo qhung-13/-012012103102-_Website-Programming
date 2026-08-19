@@ -36,6 +36,13 @@ const statusColor: Record<Payment["status"], string> = {
   failed: "bg-red-500/40",
   cancelled: "bg-gray-400/40",
 };
+const statusLabels: Record<Payment["status"], string> = {
+  pending: "Chờ xác nhận",
+  processing: "Đang xử lý",
+  success: "Hoàn tất",
+  failed: "Thất bại",
+  cancelled: "Đã hủy",
+};
 
 export const getColumns = (
   onStatusChange: (payment: Payment, status: Payment["status"]) => void,
@@ -45,6 +52,7 @@ export const getColumns = (
     id: "select",
     header: ({ table }) => (
       <Checkbox
+        aria-label="Chọn tất cả đơn hàng trên trang"
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         checked={
           table.getIsAllPageRowsSelected() ||
@@ -54,6 +62,7 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <Checkbox
+        aria-label={`Chọn đơn hàng ${row.original.id}`}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
         checked={row.getIsSelected()}
       />
@@ -61,7 +70,7 @@ export const getColumns = (
   },
   {
     accessorKey: "fullName",
-    header: "Customer",
+    header: "Khách hàng",
   },
   {
     accessorKey: "email",
@@ -79,7 +88,7 @@ export const getColumns = (
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: "Trạng thái",
     cell: ({ row }) => {
       const payment = row.original;
       return (
@@ -95,14 +104,14 @@ export const getColumns = (
               statusColor[payment.status],
             )}
           >
-            <SelectValue />
+            <SelectValue>{statusLabels[payment.status]}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="success">Success</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="pending">Chờ xác nhận</SelectItem>
+            <SelectItem value="processing">Đang xử lý</SelectItem>
+            <SelectItem value="success">Hoàn tất</SelectItem>
+            <SelectItem value="failed">Thất bại</SelectItem>
+            <SelectItem value="cancelled">Đã hủy</SelectItem>
           </SelectContent>
         </Select>
       );
@@ -110,10 +119,10 @@ export const getColumns = (
   },
   {
     accessorKey: "amount",
-    header: () => <div className="text-right">Amount</div>,
+    header: () => <div className="text-right">Tổng tiền</div>,
     cell: ({ row }) => {
       const amount = row.original.amount;
-      const formatted = new Intl.NumberFormat("en-US", {
+      const formatted = new Intl.NumberFormat("vi-VN", {
         style: "currency",
         currency: "USD",
       }).format(amount);
@@ -130,23 +139,23 @@ export const getColumns = (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">Mở menu thao tác</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(payment.id)}
             >
-              Copy order ID
+              Sao chép mã đơn hàng
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onDelete(payment)}
             >
-              Delete order
+              Xóa đơn hàng
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

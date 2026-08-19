@@ -18,11 +18,10 @@ import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import EditUser from "@/components/forms/EditUser";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import AppLineChart from "@/components/dashboard/AppLineChart";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import useAuthStore from "@/stores/authStore";
-import { apiFetch, ApiError } from "@/lib/api";
+import { apiFetch, ApiError, resolveImageUrl } from "@/lib/api";
 import { toast } from "react-toastify";
 
 type ApiUser = {
@@ -33,6 +32,7 @@ type ApiUser = {
   phone: string | null;
   address: string | null;
   status: "active" | "blocked";
+  avatar: string | null;
   created_at: string;
 };
 
@@ -49,7 +49,7 @@ const SingleUserPage = () => {
       setUser(res.data);
     } catch (err) {
       toast.error(
-        err instanceof ApiError ? err.message : "Failed to load user.",
+        err instanceof ApiError ? err.message : "Không thể tải người dùng.",
       );
     } finally {
       setLoading(false);
@@ -63,7 +63,7 @@ const SingleUserPage = () => {
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground py-16 justify-center">
-        <Loader2 className="w-4 h-4 animate-spin" /> Loading user...
+        <Loader2 className="w-4 h-4 animate-spin" /> Đang tải người dùng...
       </div>
     );
   }
@@ -71,7 +71,7 @@ const SingleUserPage = () => {
   if (!user) {
     return (
       <p className="text-sm text-muted-foreground text-center py-16">
-        User not found.
+        Không tìm thấy người dùng.
       </p>
     );
   }
@@ -88,11 +88,11 @@ const SingleUserPage = () => {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/">Dashboard</BreadcrumbLink>
+            <BreadcrumbLink href="/">Tổng quan</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/users">Users</BreadcrumbLink>
+            <BreadcrumbLink href="/users">Người dùng</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
@@ -103,10 +103,10 @@ const SingleUserPage = () => {
       {/* CONTAINER */}
       <div className="mt-4 flex flex-col xl:flex-row gap-8">
         {/* LEFT */}
-        <div className="w-full xl:w-1/3 space-y-6">
+        <div className="w-full max-w-2xl space-y-6">
           {/* USER BADGES CONTAINER */}
           <div className="bg-card border p-4 rounded-2xl">
-            <h1 className="text-xl font-semibold">User Badges</h1>
+            <h1 className="text-xl font-semibold">Trạng thái tài khoản</h1>
             <div className="flex gap-4 mt-4">
               <HoverCard>
                 <HoverCardTrigger>
@@ -117,10 +117,12 @@ const SingleUserPage = () => {
                 </HoverCardTrigger>
                 <HoverCardContent>
                   <h1 className="font-bold mb-2">
-                    {user.status === "active" ? "Active Account" : "Blocked"}
+                    {user.status === "active"
+                      ? "Tài khoản hoạt động"
+                      : "Đã bị khóa"}
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    Current account status.
+                    Trạng thái hiện tại của tài khoản.
                   </p>
                 </HoverCardContent>
               </HoverCard>
@@ -133,10 +135,9 @@ const SingleUserPage = () => {
                     />
                   </HoverCardTrigger>
                   <HoverCardContent>
-                    <h1 className="font-bold mb-2">Admin</h1>
+                    <h1 className="font-bold mb-2">Quản trị viên</h1>
                     <p className="text-sm text-muted-foreground">
-                      Admin users have access to all features and can manage
-                      users.
+                      Quản trị viên có quyền truy cập các chức năng quản lý.
                     </p>
                   </HoverCardContent>
                 </HoverCard>
@@ -147,22 +148,25 @@ const SingleUserPage = () => {
           <div className="bg-card border p-4 rounded-2xl space-y-2">
             <div className="flex items-center gap-2">
               <Avatar className="size-12">
-                <AvatarImage src={undefined} />
+                <AvatarImage
+                  src={user.avatar ? resolveImageUrl(user.avatar) : undefined}
+                />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <h1 className="text-xl font-semibold">{user.name}</h1>
             </div>
             <p className="text-sm text-muted-foreground capitalize">
-              {user.role} · {user.status}
+              {user.role === "admin" ? "Quản trị viên" : "Khách hàng"} ·{" "}
+              {user.status === "active" ? "Hoạt động" : "Đã khóa"}
             </p>
           </div>
           {/* INFORMATION CONTAINER */}
           <div className="bg-card border p-4 rounded-2xl">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold">User Information</h1>
+              <h1 className="text-xl font-semibold">Thông tin người dùng</h1>
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button>Edit User</Button>
+                  <Button>Sửa thông tin</Button>
                 </SheetTrigger>
                 <EditUser
                   userId={user.id}
@@ -170,6 +174,9 @@ const SingleUserPage = () => {
                     fullName: user.name,
                     phone: user.phone ?? "",
                     address: user.address ?? "",
+                    role: user.role,
+                    status: user.status,
+                    password: "",
                   }}
                   onUpdated={load}
                 />
@@ -177,7 +184,7 @@ const SingleUserPage = () => {
             </div>
             <div className="space-y-4 mt-4">
               <div className="flex items-center gap-2">
-                <span className="font-bold">Full name:</span>
+                <span className="font-bold">Họ và tên:</span>
                 <span>{user.name}</span>
               </div>
               <div className="flex items-center gap-2">
@@ -185,25 +192,18 @@ const SingleUserPage = () => {
                 <span>{user.email}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold">Phone:</span>
+                <span className="font-bold">Điện thoại:</span>
                 <span>{user.phone || "—"}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-bold">Address:</span>
+                <span className="font-bold">Địa chỉ:</span>
                 <span>{user.address || "—"}</span>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              Joined on {new Date(user.created_at).toLocaleDateString()}
+              Tham gia ngày{" "}
+              {new Date(user.created_at).toLocaleDateString("vi-VN")}
             </p>
-          </div>
-        </div>
-        {/* RIGHT */}
-        <div className="w-full xl:w-2/3 space-y-6">
-          {/* CHART CONTAINER */}
-          <div className="bg-card border p-4 rounded-2xl">
-            <h1 className="text-xl font-semibold">User Activity</h1>
-            <AppLineChart />
           </div>
         </div>
       </div>

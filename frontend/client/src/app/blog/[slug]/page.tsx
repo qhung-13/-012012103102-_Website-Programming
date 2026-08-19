@@ -36,7 +36,7 @@ export const generateMetadata = async ({
   const post = await getPost(slug);
   if (!post) return {};
   return {
-    title: `${post.title} — TRENDLAMA Journal`,
+    title: `${post.title} — Góc TRENDLAMA`,
     description: post.excerpt,
   };
 };
@@ -60,7 +60,7 @@ const BlogPostPage = async ({
         className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink transition-colors mb-6"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
-        Back to journal
+        Quay lại danh sách bài viết
       </Link>
 
       <span className="tag-mark text-xs uppercase tracking-[0.2em] text-muted font-mono">
@@ -71,7 +71,7 @@ const BlogPostPage = async ({
       </h1>
       {post.date && (
         <p className="text-xs text-muted font-mono mt-3">
-          {new Date(post.date).toLocaleDateString("en-US", {
+          {new Date(post.date).toLocaleDateString("vi-VN", {
             month: "long",
             day: "numeric",
             year: "numeric",
@@ -97,7 +97,7 @@ const BlogPostPage = async ({
       {relatedPosts.length > 0 && (
         <div className="mt-16">
           <h2 className="tag-mark font-display text-2xl tracking-wide mb-5">
-            Keep Reading
+            Bài viết liên quan
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {relatedPosts.map((related) => (

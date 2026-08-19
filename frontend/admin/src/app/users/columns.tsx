@@ -18,7 +18,7 @@ import Link from "next/link";
 
 export type User = {
   id: string;
-  avatar: string;
+  avatar: string | null;
   fullName: string;
   email: string;
   role: "admin" | "customer";
@@ -32,6 +32,7 @@ export const getColumns = (
     id: "select",
     header: ({ table }) => (
       <Checkbox
+        aria-label="Chọn tất cả người dùng trên trang"
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         checked={
           table.getIsAllPageRowsSelected() ||
@@ -41,6 +42,7 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <Checkbox
+        aria-label={`Chọn người dùng ${row.original.fullName}`}
         onCheckedChange={(value) => row.toggleSelected(!!value)}
         checked={row.getIsSelected()}
       />
@@ -48,25 +50,30 @@ export const getColumns = (
   },
   {
     accessorKey: "avatar",
-    header: "Avatar",
+    header: "Ảnh đại diện",
     cell: ({ row }) => {
       const user = row.original;
       return (
         <div className="w-9 h-9 relative">
-          <Image
-            src={user.avatar}
-            alt={user.fullName}
-            fill
-            unoptimized
-            className="rounded-full object-cover"
-          />
+          {user.avatar ? (
+            <Image
+              src={user.avatar}
+              alt={user.fullName}
+              fill
+              className="rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full rounded-full bg-gold/30 flex items-center justify-center text-xs font-medium">
+              {user.fullName.trim().charAt(0).toUpperCase() || "?"}
+            </div>
+          )}
         </div>
       );
     },
   },
   {
     accessorKey: "fullName",
-    header: "User",
+    header: "Người dùng",
   },
   {
     accessorKey: "email",
@@ -84,7 +91,7 @@ export const getColumns = (
   },
   {
     accessorKey: "role",
-    header: "Role",
+    header: "Vai trò",
     cell: ({ row }) => (
       <div
         className={cn(
@@ -92,13 +99,13 @@ export const getColumns = (
           row.original.role === "admin" ? "bg-gold/30" : "bg-muted",
         )}
       >
-        {row.original.role}
+        {row.original.role === "admin" ? "Quản trị viên" : "Khách hàng"}
       </div>
     ),
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: "Trạng thái",
     cell: ({ row }) => {
       const status = row.getValue("status");
 
@@ -110,7 +117,7 @@ export const getColumns = (
             status === "blocked" && "bg-red-500/40",
           )}
         >
-          {status as string}
+          {status === "active" ? "Hoạt động" : "Đã khóa"}
         </div>
       );
     },
@@ -124,26 +131,26 @@ export const getColumns = (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">Mở menu thao tác</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
             <DropdownMenuItem
               onClick={() => navigator.clipboard.writeText(user.id)}
             >
-              Copy user ID
+              Sao chép mã người dùng
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href={`/users/${user.id}`}>View customer</Link>
+              <Link href={`/users/${user.id}`}>Xem chi tiết</Link>
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onDelete(user)}
             >
-              Delete user
+              Xóa người dùng
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

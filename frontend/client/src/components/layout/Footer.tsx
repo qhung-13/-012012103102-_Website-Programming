@@ -3,28 +3,28 @@ import Link from "next/link";
 
 const linkGroups = [
   {
-    title: "Shop",
+    title: "Mua sắm",
     links: [
-      { label: "All Products", href: "/products" },
-      { label: "New Arrivals", href: "/products" },
-      { label: "Wishlist", href: "/wishlist" },
-      { label: "Cart", href: "/cart" },
+      { label: "Tất cả sản phẩm", href: "/products" },
+      { label: "Sản phẩm mới", href: "/products?sort=newest" },
+      { label: "Yêu thích", href: "/wishlist" },
+      { label: "Giỏ hàng", href: "/cart" },
     ],
   },
   {
-    title: "Company",
+    title: "TRENDLAMA",
     links: [
-      { label: "About", href: "/about" },
-      { label: "Contact", href: "/contact" },
-      { label: "Blog", href: "/blog" },
+      { label: "Giới thiệu", href: "/about" },
+      { label: "Liên hệ", href: "/contact" },
+      { label: "Bài viết", href: "/blog" },
     ],
   },
   {
-    title: "Support",
+    title: "Hỗ trợ",
     links: [
-      { label: "Terms of Service", href: "/" },
-      { label: "Privacy Policy", href: "/" },
-      { label: "Shipping & Returns", href: "/" },
+      { label: "Điều khoản sử dụng", href: "/terms" },
+      { label: "Quyền riêng tư", href: "/privacy" },
+      { label: "Giao hàng & đổi trả", href: "/shipping" },
     ],
   },
 ];
@@ -42,11 +42,11 @@ const Footer = () => {
             </p>
           </Link>
           <p className="text-sm leading-relaxed">
-            Streetwear-inspired basics, cut for everyday movement. Small
-            batches, shipped worldwide.
+            Trang phục hiện đại, thoải mái cho mọi chuyển động hằng ngày. Sản
+            xuất theo lô nhỏ và giao hàng tận nơi.
           </p>
           <span className="tag-mark text-xs text-paper/50">
-            © 2026 Trendlama. All rights reserved.
+            © 2026 TRENDLAMA. Bảo lưu mọi quyền.
           </span>
         </div>
 

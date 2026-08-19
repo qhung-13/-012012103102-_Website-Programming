@@ -5,18 +5,19 @@ import ShippingForm from "@/components/checkout/ShippingForm";
 import useCartStore from "@/stores/cartStore";
 import useAuthStore from "@/stores/authStore";
 import { apiFetch, ApiError, resolveImageUrl } from "@/lib/api";
-import { ShippingFormInputs } from "@/types";
+import { PaymentFormInputs, ShippingFormInputs } from "@/types";
 import { ArrowRight, CheckCircle2, ShoppingBag, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "react-toastify";
+import { formatColor } from "@/lib/localization";
 
 const steps = [
-  { id: 1, title: "Shopping Cart" },
-  { id: 2, title: "Shipping Address" },
-  { id: 3, title: "Payment Method" },
+  { id: 1, title: "Giỏ hàng" },
+  { id: 2, title: "Địa chỉ giao hàng" },
+  { id: 3, title: "Thanh toán" },
 ];
 
 type OrderResult = {
@@ -32,7 +33,10 @@ const CartPageContent = () => {
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderResult, setOrderResult] = useState<OrderResult | null>(null);
 
-  const activeStep = parseInt(searchParams.get("step") || "1");
+  const activeStep = Math.min(
+    3,
+    Math.max(1, parseInt(searchParams.get("step") || "1") || 1),
+  );
 
   const { cart, removeFromCart, clearCart } = useCartStore();
   const { token } = useAuthStore();
@@ -41,8 +45,10 @@ const CartPageContent = () => {
     (acc, item) => acc + item.price * item.quantity,
     0,
   );
+  const shippingFee = subtotal >= 100 ? 0 : 10;
+  const estimatedTotal = subtotal - subtotal * 0.1 + shippingFee;
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async ({ paymentMethod }: PaymentFormInputs) => {
     if (!shippingForm) return;
     setPlacingOrder(true);
     try {
@@ -52,8 +58,6 @@ const CartPageContent = () => {
         body: {
           items: cart.map((item) => ({
             id: item.id,
-            name: item.name,
-            price: item.price,
             quantity: item.quantity,
             selectedSize: item.selectedSize,
             selectedColor: item.selectedColor,
@@ -64,17 +68,17 @@ const CartPageContent = () => {
             phone: shippingForm.phone,
             address: `${shippingForm.address}, ${shippingForm.city}`,
           },
-          payment_method: "card",
+          payment_method: paymentMethod,
         },
       });
       setOrderResult(res.data);
       clearCart();
-      toast.success("Order placed successfully!");
+      toast.success("Đặt hàng thành công!");
     } catch (err) {
       const message =
         err instanceof ApiError
           ? err.message
-          : "Failed to place order. Please try again.";
+          : "Không thể đặt hàng. Vui lòng thử lại.";
       toast.error(message);
     } finally {
       setPlacingOrder(false);
@@ -86,21 +90,21 @@ const CartPageContent = () => {
       <div className="flex flex-col items-center justify-center gap-4 mt-16 mb-16 text-center max-w-md mx-auto">
         <CheckCircle2 className="w-12 h-12 text-emerald-500" />
         <h1 className="font-display text-3xl tracking-wide">
-          Order Confirmed!
+          Đặt hàng thành công!
         </h1>
         <p className="text-muted text-sm">
-          Thanks for shopping with us. A confirmation has been sent to{" "}
+          Cảm ơn bạn đã mua sắm tại TRENDLAMA. Chúng tôi sẽ liên hệ xác nhận qua{" "}
           <span className="font-medium text-ink">
             {orderResult.shipping_email}
           </span>
           .
         </p>
         <div className="bg-white border border-line rounded-2xl px-6 py-4 w-full flex items-center justify-between">
-          <span className="text-sm text-muted">Order #</span>
+          <span className="text-sm text-muted">Mã đơn hàng</span>
           <span className="font-mono font-medium">#{orderResult.id}</span>
         </div>
         <div className="bg-white border border-line rounded-2xl px-6 py-4 w-full flex items-center justify-between">
-          <span className="text-sm text-muted">Total paid</span>
+          <span className="text-sm text-muted">Tổng thanh toán</span>
           <span className="font-mono font-medium">
             ${orderResult.total.toFixed(2)}
           </span>
@@ -109,7 +113,7 @@ const CartPageContent = () => {
           href="/products"
           className="mt-2 w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full flex items-center justify-center gap-2 text-sm font-medium"
         >
-          Continue shopping
+          Tiếp tục mua sắm
         </Link>
       </div>
     );
@@ -120,10 +124,10 @@ const CartPageContent = () => {
       {/* TITLE */}
       <div className="text-center">
         <span className="tag-mark text-xs uppercase tracking-[0.2em] text-muted font-mono justify-center">
-          Checkout
+          Thanh toán
         </span>
         <h1 className="font-display text-4xl tracking-wide mt-1">
-          Your Shopping Cart
+          Giỏ hàng của bạn
         </h1>
       </div>
       {/* STEPS */}
@@ -184,9 +188,9 @@ const CartPageContent = () => {
                       <div className="flex flex-col gap-1">
                         <p className="text-sm font-medium">{item.name}</p>
                         <p className="text-xs text-muted">
-                          Qty {item.quantity} · Size{" "}
+                          SL {item.quantity} · Cỡ{" "}
                           {item.selectedSize.toUpperCase()} ·{" "}
-                          {item.selectedColor}
+                          {formatColor(item.selectedColor)}
                         </p>
                       </div>
                       <p className="font-mono font-medium">
@@ -197,6 +201,7 @@ const CartPageContent = () => {
                   {/* DELETE BUTTON */}
                   <button
                     onClick={() => removeFromCart(item)}
+                    aria-label={`Xóa ${item.name} khỏi giỏ hàng`}
                     className="w-8 h-8 rounded-full bg-red-50 hover:bg-red-100 transition-colors text-red-400 flex items-center justify-center cursor-pointer shrink-0"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -206,48 +211,54 @@ const CartPageContent = () => {
             ) : (
               <div className="flex flex-col items-center gap-3 py-12 text-center">
                 <ShoppingBag className="w-8 h-8 text-muted" />
-                <p className="text-sm text-muted">Your cart is empty.</p>
+                <p className="text-sm text-muted">Giỏ hàng đang trống.</p>
                 <Link
                   href="/products"
                   className="text-sm font-medium underline hover:text-gold-dark"
                 >
-                  Continue shopping
+                  Tiếp tục mua sắm
                 </Link>
               </div>
             )
+          ) : cart.length === 0 ? (
+            <p className="text-sm text-muted">
+              Giỏ hàng đang trống. Vui lòng chọn sản phẩm trước.
+            </p>
           ) : activeStep === 2 ? (
             <ShippingForm setShippingForm={setShippingForm} />
           ) : activeStep === 3 && shippingForm ? (
             <PaymentForm onSubmit={handlePlaceOrder} loading={placingOrder} />
           ) : (
             <p className="text-sm text-muted">
-              Please fill in the shipping form to continue.
+              Vui lòng nhập thông tin giao hàng để tiếp tục.
             </p>
           )}
         </div>
         {/* DETAILS */}
         <div className="w-full lg:w-5/12 bg-white border border-line p-6 sm:p-8 rounded-3xl flex flex-col gap-6 h-max">
-          <h2 className="tag-mark font-medium">Order Summary</h2>
+          <h2 className="tag-mark font-medium">Tóm tắt đơn hàng</h2>
           <div className="flex flex-col gap-3 text-sm">
             <div className="flex justify-between">
-              <p className="text-muted">Subtotal</p>
+              <p className="text-muted">Tạm tính</p>
               <p className="font-mono font-medium">${subtotal.toFixed(2)}</p>
             </div>
             <div className="flex justify-between">
-              <p className="text-muted">Discount (10%)</p>
+              <p className="text-muted">Giảm giá (10%)</p>
               <p className="font-mono font-medium">
                 -${(subtotal * 0.1).toFixed(2)}
               </p>
             </div>
             <div className="flex justify-between">
-              <p className="text-muted">Shipping Fee</p>
-              <p className="font-mono font-medium">$10.00</p>
+              <p className="text-muted">Phí giao hàng</p>
+              <p className="font-mono font-medium">
+                {shippingFee === 0 ? "Miễn phí" : "$10.00"}
+              </p>
             </div>
             <div className="h-px bg-line" />
             <div className="flex justify-between items-center">
-              <p className="text-ink font-medium">Total</p>
+              <p className="text-ink font-medium">Tổng cộng</p>
               <p className="font-mono text-lg font-semibold">
-                ${(subtotal - subtotal * 0.1 + 10).toFixed(2)}
+                ${estimatedTotal.toFixed(2)}
               </p>
             </div>
           </div>
@@ -256,7 +267,7 @@ const CartPageContent = () => {
               onClick={() => router.push("/cart?step=2", { scroll: false })}
               className="w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2 text-sm font-medium"
             >
-              Continue
+              Tiếp tục
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}

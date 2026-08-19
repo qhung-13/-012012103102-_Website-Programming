@@ -3,23 +3,23 @@ import { Truck, ShieldCheck, RotateCcw, Headphones } from "lucide-react";
 const features = [
   {
     icon: <Truck className="w-5 h-5" />,
-    title: "Free Shipping",
-    desc: "On all orders over $50",
+    title: "Miễn phí giao hàng",
+    desc: "Cho đơn từ 100 USD",
   },
   {
     icon: <RotateCcw className="w-5 h-5" />,
-    title: "Easy Returns",
-    desc: "30-day return window",
+    title: "Đổi trả dễ dàng",
+    desc: "Trong vòng 30 ngày",
   },
   {
     icon: <ShieldCheck className="w-5 h-5" />,
-    title: "Secure Payment",
-    desc: "100% protected checkout",
+    title: "Thanh toán minh bạch",
+    desc: "COD hoặc chuyển khoản",
   },
   {
     icon: <Headphones className="w-5 h-5" />,
-    title: "24/7 Support",
-    desc: "We're here to help anytime",
+    title: "Hỗ trợ khách hàng",
+    desc: "Phản hồi trong ngày làm việc",
   },
 ];
 

@@ -1,6 +1,7 @@
-import { ProductType } from "@/types";
+import { ApiProductType, mapApiProduct, ProductType } from "@/types";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { apiFetch } from "@/lib/api";
 
 type WishlistStateType = {
   wishlist: ProductType[];
@@ -8,7 +9,11 @@ type WishlistStateType = {
 };
 
 type WishlistActionsType = {
-  toggleWishlist: (product: ProductType) => void;
+  toggleWishlist: (
+    product: ProductType,
+    token?: string | null,
+  ) => Promise<boolean>;
+  syncWishlist: (token: string) => Promise<void>;
   isWishlisted: (id: ProductType["id"]) => boolean;
   clearWishlist: () => void;
 };
@@ -18,15 +23,26 @@ const useWishlistStore = create<WishlistStateType & WishlistActionsType>()(
     (set, get) => ({
       wishlist: [],
       hasHydrated: false,
-      toggleWishlist: (product) =>
-        set((state) => {
-          const exists = state.wishlist.some((p) => p.id === product.id);
-          return {
-            wishlist: exists
-              ? state.wishlist.filter((p) => p.id !== product.id)
-              : [...state.wishlist, product],
-          };
-        }),
+      toggleWishlist: async (product, token) => {
+        const exists = get().wishlist.some((p) => p.id === product.id);
+        if (token) {
+          await apiFetch(exists ? `/wishlist/${product.id}` : "/wishlist", {
+            method: exists ? "DELETE" : "POST",
+            token,
+            ...(exists ? {} : { body: { product_id: product.id } }),
+          });
+        }
+        set((state) => ({
+          wishlist: exists
+            ? state.wishlist.filter((p) => p.id !== product.id)
+            : [...state.wishlist, product],
+        }));
+        return !exists;
+      },
+      syncWishlist: async (token) => {
+        const res = await apiFetch<ApiProductType[]>("/wishlist", { token });
+        set({ wishlist: res.data.map(mapApiProduct) });
+      },
       isWishlisted: (id) => get().wishlist.some((p) => p.id === id),
       clearWishlist: () => set({ wishlist: [] }),
     }),

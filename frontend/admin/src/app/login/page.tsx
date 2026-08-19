@@ -19,11 +19,10 @@ const AdminLoginPage = () => {
     setLoading(true);
     try {
       await login(form.email, form.password);
-      toast.success("Welcome back!");
+      toast.success("Đăng nhập quản trị thành công!");
       router.push("/");
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : "Something went wrong.";
+      const message = err instanceof ApiError ? err.message : "Đã xảy ra lỗi.";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -38,10 +37,10 @@ const AdminLoginPage = () => {
             <Image src="/logo.svg" alt="TrendLama" width={22} height={22} />
           </div>
           <h1 className="text-lg font-semibold tracking-tight">
-            TRENDLAMA Admin
+            Quản trị TRENDLAMA
           </h1>
           <p className="text-sm text-muted-foreground">
-            Sign in to manage your store
+            Đăng nhập để quản lý cửa hàng
           </p>
         </div>
 
@@ -59,6 +58,7 @@ const AdminLoginPage = () => {
                 id="email"
                 type="email"
                 required
+                maxLength={150}
                 placeholder="admin@trendlama.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -71,7 +71,7 @@ const AdminLoginPage = () => {
               htmlFor="password"
               className="text-xs font-medium text-muted-foreground"
             >
-              Password
+              Mật khẩu
             </label>
             <div className="flex items-center gap-2 border rounded-md px-3 py-2 focus-within:ring-1 focus-within:ring-ring">
               <Lock className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -79,6 +79,7 @@ const AdminLoginPage = () => {
                 id="password"
                 type="password"
                 required
+                maxLength={72}
                 placeholder="••••••••"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -87,14 +88,10 @@ const AdminLoginPage = () => {
             </div>
           </div>
           <Button type="submit" disabled={loading} className="mt-2 gap-2">
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Đang đăng nhập..." : "Đăng nhập"}
             <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </form>
-
-        <p className="text-xs text-muted-foreground text-center">
-          Demo account: admin@trendlama.com / Admin@123
-        </p>
       </div>
     </div>
   );

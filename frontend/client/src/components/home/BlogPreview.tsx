@@ -20,17 +20,17 @@ const BlogPreview = async () => {
       <div className="flex items-end justify-between mb-6">
         <div>
           <span className="tag-mark text-xs uppercase tracking-[0.2em] text-muted font-mono">
-            From the journal
+            Từ góc TRENDLAMA
           </span>
           <h2 className="font-display text-3xl tracking-wide mt-1">
-            Latest Stories
+            Bài viết mới nhất
           </h2>
         </div>
         <Link
           href="/blog"
           className="hidden sm:flex items-center gap-1 text-sm font-medium text-ink hover:text-gold-dark transition-colors group"
         >
-          View all posts
+          Xem tất cả bài viết
           <span className="group-hover:translate-x-0.5 transition-transform">
             →
           </span>

@@ -41,15 +41,17 @@ const ProductPage = async ({
 
   if (!product) return notFound();
 
-  const selectedSize = size || (product.sizes[0] as string);
-  const selectedColor = color || (product.colors[0] as string);
+  const selectedSize = size || product.sizes[0] || "";
+  const selectedColor = color || product.colors[0] || "";
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row lg:gap-16 mt-8">
       {/* IMAGE */}
       <div className="w-full lg:w-1/2 relative aspect-[4/5] rounded-3xl overflow-hidden bg-paper-dim">
         <Image
-          src={resolveImageUrl(product.images[selectedColor])}
+          src={resolveImageUrl(
+            product.images[selectedColor] ?? Object.values(product.images)[0],
+          )}
           alt={product.name}
           fill
           className="object-contain p-6"
@@ -61,7 +63,7 @@ const ProductPage = async ({
       {/* DETAILS */}
       <div className="w-full lg:w-1/2 flex flex-col gap-4">
         <span className="tag-mark text-xs uppercase tracking-[0.2em] text-muted font-mono">
-          TrendLama Original
+          Sản phẩm chính hãng TRENDLAMA
         </span>
         <h1 className="font-display text-4xl tracking-wide">{product.name}</h1>
         <p className="text-muted text-sm leading-relaxed">
@@ -76,44 +78,19 @@ const ProductPage = async ({
           selectedSize={selectedSize}
           selectedColor={selectedColor}
         />
-        {/* CARD INFO */}
-        <div className="flex items-center gap-2 mt-4">
-          <Image
-            src="/klarna.png"
-            alt="klarna"
-            width={50}
-            height={25}
-            className="rounded-md"
-          />
-          <Image
-            src="/cards.png"
-            alt="cards"
-            width={50}
-            height={25}
-            className="rounded-md"
-          />
-          <Image
-            src="/stripe.png"
-            alt="stripe"
-            width={50}
-            height={25}
-            className="rounded-md"
-          />
-        </div>
         <p className="text-muted text-xs leading-relaxed">
-          By clicking Pay Now, you agree to our{" "}
-          <span className="underline hover:text-ink cursor-pointer">
-            Terms & Conditions
-          </span>{" "}
-          and{" "}
-          <span className="underline hover:text-ink cursor-pointer">
-            Privacy Policy
-          </span>
-          . You authorize us to charge your selected payment method for the
-          total amount shown. All sales are subject to our return and{" "}
-          <span className="underline hover:text-ink cursor-pointer">
-            Refund Policies
-          </span>
+          Khi đặt hàng, bạn đồng ý với{" "}
+          <a href="/terms" className="underline hover:text-ink">
+            Điều khoản sử dụng
+          </a>
+          ,{" "}
+          <a href="/privacy" className="underline hover:text-ink">
+            Chính sách quyền riêng tư
+          </a>{" "}
+          và{" "}
+          <a href="/shipping" className="underline hover:text-ink">
+            Chính sách giao hàng, đổi trả
+          </a>
           .
         </p>
       </div>

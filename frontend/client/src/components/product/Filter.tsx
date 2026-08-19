@@ -11,13 +11,14 @@ const Filter = () => {
   const handleFilter = (value: string) => {
     const params = new URLSearchParams(searchParams);
     params.set("sort", value);
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   return (
     <div className="flex items-center justify-end gap-2 text-sm text-muted my-2">
       <SlidersHorizontal className="w-3.5 h-3.5" />
-      <span>Sort by</span>
+      <span>Sắp xếp</span>
       <select
         name="sort"
         id="sort"
@@ -25,10 +26,10 @@ const Filter = () => {
         className="border border-line bg-white rounded-full px-3 py-1.5 text-ink cursor-pointer outline-none focus:border-gold-dark"
         onChange={(e) => handleFilter(e.target.value)}
       >
-        <option value="newest">Newest</option>
-        <option value="oldest">Oldest</option>
-        <option value="asc">Price: Low to High</option>
-        <option value="desc">Price: High to Low</option>
+        <option value="newest">Mới nhất</option>
+        <option value="oldest">Cũ nhất</option>
+        <option value="asc">Giá: thấp đến cao</option>
+        <option value="desc">Giá: cao đến thấp</option>
       </select>
     </div>
   );

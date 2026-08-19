@@ -75,22 +75,49 @@ const sizes = [
   "48",
 ] as const;
 
+const colorLabels: Record<(typeof colors)[number], string> = {
+  blue: "Xanh dương",
+  green: "Xanh lá",
+  red: "Đỏ",
+  yellow: "Vàng",
+  purple: "Tím",
+  orange: "Cam",
+  pink: "Hồng",
+  brown: "Nâu",
+  gray: "Xám",
+  black: "Đen",
+  white: "Trắng",
+};
+
 const formSchema = z.object({
-  name: z.string().min(1, { message: "Product name is required!" }),
+  name: z
+    .string()
+    .trim()
+    .min(2, { message: "Tên sản phẩm phải có ít nhất 2 ký tự." })
+    .max(200, "Tên sản phẩm quá dài."),
   shortDescription: z
     .string()
-    .min(1, { message: "Short description is required!" })
-    .max(500),
-  description: z.string().min(1, { message: "Description is required!" }),
-  price: z.number().min(0.01, { message: "Price is required!" }),
-  stock: z.number().min(0).optional(),
-  categoryId: z.string().min(1, { message: "Category is required!" }),
+    .min(1, { message: "Vui lòng nhập mô tả ngắn." })
+    .max(500, "Mô tả ngắn quá dài."),
+  description: z
+    .string()
+    .min(1, { message: "Vui lòng nhập mô tả sản phẩm." })
+    .max(50000, "Mô tả chi tiết quá dài."),
+  price: z
+    .number()
+    .min(0.01, { message: "Giá phải lớn hơn 0." })
+    .max(99999999.99, "Giá vượt quá giới hạn."),
+  stock: z
+    .number()
+    .int("Tồn kho phải là số nguyên.")
+    .min(0)
+    .max(4294967295)
+    .optional(),
+  categoryId: z.string().min(1, { message: "Vui lòng chọn danh mục." }),
   sizes: z
     .array(z.enum(sizes))
-    .min(1, { message: "Select at least one size." }),
-  colors: z
-    .array(z.enum(colors))
-    .min(1, { message: "Select at least one color." }),
+    .min(1, { message: "Chọn ít nhất một kích cỡ." }),
+  colors: z.array(z.enum(colors)).min(1, { message: "Chọn ít nhất một màu." }),
 });
 
 type Category = { id: number; name: string };
@@ -105,7 +132,7 @@ const AddProduct = ({ onCreated }: { onCreated?: () => void }) => {
   useEffect(() => {
     apiFetch<Category[]>("/categories")
       .then((res) => setCategories(res.data))
-      .catch(() => toast.error("Failed to load categories."));
+      .catch(() => toast.error("Không thể tải danh mục."));
   }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -151,14 +178,15 @@ const AddProduct = ({ onCreated }: { onCreated?: () => void }) => {
         },
       });
 
-      toast.success("Product created.");
+      toast.success("Đã tạo sản phẩm.");
       form.reset();
       setFiles({});
       onCreated?.();
+      window.dispatchEvent(new Event("trendlama:products-changed"));
       closeRef.current?.click();
     } catch (err) {
       toast.error(
-        err instanceof ApiError ? err.message : "Failed to create product.",
+        err instanceof ApiError ? err.message : "Không thể tạo sản phẩm.",
       );
     } finally {
       setSubmitting(false);
@@ -169,284 +197,278 @@ const AddProduct = ({ onCreated }: { onCreated?: () => void }) => {
     <SheetContent>
       <ScrollArea className="h-screen">
         <SheetHeader>
-          <SheetTitle className="mb-4">Add Product</SheetTitle>
-          <SheetDescription asChild>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-8"
-              >
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Enter the name of the product.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="shortDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Short Description</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Enter the short description of the product.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Enter the description of the product.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Price</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseFloat(e.target.value) || 0)
-                            }
+          <SheetTitle className="mb-4">Thêm sản phẩm</SheetTitle>
+          <SheetDescription>
+            Nhập thông tin, biến thể và ảnh của sản phẩm mới.
+          </SheetDescription>
+        </SheetHeader>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-8 mt-6 pb-8 pr-4"
+          >
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tên sản phẩm</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Nhập tên hiển thị của sản phẩm.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="shortDescription"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mô tả ngắn</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Tóm tắt nổi bật của sản phẩm, tối đa 500 ký tự.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mô tả chi tiết</FormLabel>
+                  <FormControl>
+                    <Textarea {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Nhập thông tin chi tiết về chất liệu, phom dáng và cách sử
+                    dụng.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Giá (USD)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseFloat(e.target.value) || 0)
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="stock"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tồn kho</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(parseInt(e.target.value) || 0)
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Danh mục</FormLabel>
+                  <FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Chọn danh mục" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={String(cat.id)}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormDescription>
+                    Chọn danh mục phù hợp với sản phẩm.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="sizes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kích cỡ</FormLabel>
+                  <FormControl>
+                    <div className="grid grid-cols-3 gap-4 my-2">
+                      {sizes.map((size) => (
+                        <div className="flex items-center gap-2" key={size}>
+                          <Checkbox
+                            id={`size-${size}`}
+                            checked={field.value?.includes(size)}
+                            onCheckedChange={(checked) => {
+                              const currentValues = field.value || [];
+                              if (checked) {
+                                field.onChange([...currentValues, size]);
+                              } else {
+                                field.onChange(
+                                  currentValues.filter((v) => v !== size),
+                                );
+                              }
+                            }}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="stock"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Stock</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) =>
-                              field.onChange(parseInt(e.target.value) || 0)
-                            }
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat.id} value={String(cat.id)}>
-                                {cat.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormDescription>
-                        Enter the category of the product.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="sizes"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sizes</FormLabel>
-                      <FormControl>
-                        <div className="grid grid-cols-3 gap-4 my-2">
-                          {sizes.map((size) => (
-                            <div className="flex items-center gap-2" key={size}>
-                              <Checkbox
-                                id={`size-${size}`}
-                                checked={field.value?.includes(size)}
-                                onCheckedChange={(checked) => {
-                                  const currentValues = field.value || [];
-                                  if (checked) {
-                                    field.onChange([...currentValues, size]);
-                                  } else {
-                                    field.onChange(
-                                      currentValues.filter((v) => v !== size),
+                          <label htmlFor={`size-${size}`} className="text-xs">
+                            {size}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </FormControl>
+                  <FormDescription>Chọn các kích cỡ đang bán.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="colors"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Màu sắc</FormLabel>
+                  <FormControl>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4 my-2">
+                        {colors.map((color) => (
+                          <div className="flex items-center gap-2" key={color}>
+                            <Checkbox
+                              id={`color-${color}`}
+                              checked={field.value?.includes(color)}
+                              onCheckedChange={(checked) => {
+                                const currentValues = field.value || [];
+                                if (checked) {
+                                  field.onChange([...currentValues, color]);
+                                } else {
+                                  field.onChange(
+                                    currentValues.filter((v) => v !== color),
+                                  );
+                                  setFiles((prev) => {
+                                    const next = { ...prev };
+                                    delete next[color];
+                                    return next;
+                                  });
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`color-${color}`}
+                              className="text-xs flex items-center gap-2"
+                            >
+                              <div
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: color }}
+                              />
+                              {colorLabels[color]}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                      {field.value && field.value.length > 0 && (
+                        <div className="mt-8 space-y-4">
+                          <p className="text-sm font-medium">
+                            Tải một ảnh cho mỗi màu đã chọn:
+                          </p>
+                          {field.value.map((color) => (
+                            <div
+                              className="flex items-center gap-2"
+                              key={color}
+                            >
+                              <div
+                                className="w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: color }}
+                              />
+                              <span className="text-sm min-w-[60px]">
+                                {colorLabels[color]}
+                              </span>
+                              <Input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file && file.size <= 5 * 1024 * 1024) {
+                                    setFiles((prev) => ({
+                                      ...prev,
+                                      [color]: file,
+                                    }));
+                                  } else if (file)
+                                    toast.error(
+                                      "Mỗi ảnh không được vượt quá 5 MB.",
                                     );
-                                  }
                                 }}
                               />
-                              <label
-                                htmlFor={`size-${size}`}
-                                className="text-xs"
-                              >
-                                {size}
-                              </label>
+                              {files[color] && (
+                                <span className="text-xs text-muted-foreground shrink-0">
+                                  ✓
+                                </span>
+                              )}
                             </div>
                           ))}
                         </div>
-                      </FormControl>
-                      <FormDescription>
-                        Select the available sizes for the product.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="colors"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Colors</FormLabel>
-                      <FormControl>
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-3 gap-4 my-2">
-                            {colors.map((color) => (
-                              <div
-                                className="flex items-center gap-2"
-                                key={color}
-                              >
-                                <Checkbox
-                                  id={`color-${color}`}
-                                  checked={field.value?.includes(color)}
-                                  onCheckedChange={(checked) => {
-                                    const currentValues = field.value || [];
-                                    if (checked) {
-                                      field.onChange([...currentValues, color]);
-                                    } else {
-                                      field.onChange(
-                                        currentValues.filter(
-                                          (v) => v !== color,
-                                        ),
-                                      );
-                                      setFiles((prev) => {
-                                        const next = { ...prev };
-                                        delete next[color];
-                                        return next;
-                                      });
-                                    }
-                                  }}
-                                />
-                                <label
-                                  htmlFor={`color-${color}`}
-                                  className="text-xs flex items-center gap-2"
-                                >
-                                  <div
-                                    className="w-2 h-2 rounded-full"
-                                    style={{ backgroundColor: color }}
-                                  />
-                                  {color}
-                                </label>
-                              </div>
-                            ))}
-                          </div>
-                          {field.value && field.value.length > 0 && (
-                            <div className="mt-8 space-y-4">
-                              <p className="text-sm font-medium">
-                                Upload an image for each selected color
-                                (multi-upload):
-                              </p>
-                              {field.value.map((color) => (
-                                <div
-                                  className="flex items-center gap-2"
-                                  key={color}
-                                >
-                                  <div
-                                    className="w-2 h-2 rounded-full shrink-0"
-                                    style={{ backgroundColor: color }}
-                                  />
-                                  <span className="text-sm min-w-[60px]">
-                                    {color}
-                                  </span>
-                                  <Input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) {
-                                        setFiles((prev) => ({
-                                          ...prev,
-                                          [color]: file,
-                                        }));
-                                      }
-                                    }}
-                                  />
-                                  {files[color] && (
-                                    <span className="text-xs text-muted-foreground shrink-0">
-                                      ✓
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormDescription>
-                        Select the available colors for the product.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    "Submit"
-                  )}
-                </Button>
-              </form>
-            </Form>
-          </SheetDescription>
-        </SheetHeader>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormDescription>
+                    Chọn các màu đang bán; ảnh hỗ trợ JPEG, PNG, WEBP hoặc GIF.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Đang lưu...
+                </>
+              ) : (
+                "Tạo sản phẩm"
+              )}
+            </Button>
+          </form>
+        </Form>
       </ScrollArea>
       <SheetClose ref={closeRef} className="hidden" />
     </SheetContent>

@@ -19,22 +19,22 @@ const Homepage = async ({
       <section className="relative mt-4 mb-16 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
         <div className="md:col-span-5 flex flex-col gap-5 order-2 md:order-1">
           <span className="tag-mark text-xs uppercase tracking-[0.2em] text-muted font-mono">
-            New Arrivals — SS26
+            Bộ sưu tập mới — SS26
           </span>
           <h1 className="font-display text-6xl sm:text-7xl leading-[0.95] tracking-wide text-balance">
-            NEW SEASON.
+            MÙA MỚI.
             <br />
-            NEW YOU.
+            PHONG CÁCH MỚI.
           </h1>
           <p className="text-muted text-sm max-w-xs leading-relaxed">
-            Streetwear-inspired basics, cut for everyday movement. Small
-            batches, shipped worldwide.
+            Những thiết kế lấy cảm hứng từ thời trang đường phố, thoải mái trong
+            từng chuyển động và được sản xuất theo lô nhỏ.
           </p>
           <Link
             href="/products"
             className="w-fit flex items-center gap-2 bg-ink text-paper text-sm font-medium rounded-full pl-5 pr-4 py-3 hover:bg-gold-dark transition-colors"
           >
-            Shop the drop
+            Khám phá ngay
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -42,7 +42,7 @@ const Homepage = async ({
         <div className="md:col-span-7 relative aspect-[4/3] sm:aspect-[3/2] order-1 md:order-2 rounded-3xl overflow-hidden bg-paper-dim">
           <Image
             src="/featured.png"
-            alt="Featured Product"
+            alt="Sản phẩm nổi bật của TRENDLAMA"
             fill
             priority
             className="object-cover"
@@ -52,9 +52,9 @@ const Homepage = async ({
             <span className="w-2.5 h-2.5 rounded-full bg-gold shrink-0" />
             <div className="leading-tight">
               <p className="text-[11px] text-muted uppercase tracking-wider">
-                Featured
+                Nổi bật
               </p>
-              <p className="font-mono text-sm font-medium">Cozy Comfort Set</p>
+              <p className="font-mono text-sm font-medium">Bộ sưu tập Êm Dịu</p>
             </div>
           </div>
         </div>
@@ -64,7 +64,7 @@ const Homepage = async ({
       <section>
         <div className="flex items-end justify-between mb-6">
           <h2 className="tag-mark font-display text-3xl tracking-wide">
-            Trending Now
+            Đang được yêu thích
           </h2>
         </div>
         <ProductList category={category} params="homepage" />

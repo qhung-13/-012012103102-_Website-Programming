@@ -10,11 +10,13 @@ const ProductList = async ({
   category,
   sort,
   page,
+  search,
   params,
 }: {
   category?: string;
   sort?: string;
   page?: string;
+  search?: string;
   params: "homepage" | "products";
 }) => {
   const limit = params === "homepage" ? 8 : 12;
@@ -25,6 +27,7 @@ const ProductList = async ({
   query.set("limit", String(limit));
   if (category && category !== "all") query.set("category", category);
   if (sort) query.set("sort", sort);
+  if (search) query.set("search", search);
 
   let products: ReturnType<typeof mapApiProduct>[] = [];
   let meta: ApiResponse<unknown>["meta"] | undefined;
@@ -42,16 +45,15 @@ const ProductList = async ({
 
   return (
     <div className="w-full">
-      <Categories />
+      <Categories activeCategory={category} sort={sort} search={search} />
       {params === "products" && <Filter />}
       {hasError ? (
         <p className="text-sm text-muted py-12 text-center">
-          Couldn&apos;t load products right now. Please make sure the backend
-          API is running and try again.
+          Không thể tải sản phẩm lúc này. Vui lòng thử lại sau.
         </p>
       ) : products.length === 0 ? (
         <p className="text-sm text-muted py-12 text-center">
-          No products found in this category yet.
+          Không tìm thấy sản phẩm phù hợp.
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
@@ -65,7 +67,7 @@ const ProductList = async ({
           href={category ? `/products/?category=${category}` : "/products"}
           className="flex items-center gap-1 justify-end mt-6 text-sm font-medium text-ink hover:text-gold-dark transition-colors group"
         >
-          View all products
+          Xem tất cả sản phẩm
           <span className="group-hover:translate-x-0.5 transition-transform">
             →
           </span>
@@ -77,6 +79,7 @@ const ProductList = async ({
           totalPages={meta.totalPages}
           category={category}
           sort={sort}
+          search={search}
         />
       )}
     </div>

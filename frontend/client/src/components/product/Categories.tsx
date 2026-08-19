@@ -1,60 +1,64 @@
-"use client";
-import {
-  Footprints,
-  Glasses,
-  Briefcase,
-  Shirt,
-  ShoppingBasket,
-  Hand,
-  Venus,
-} from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { apiFetch } from "@/lib/api";
+import { ShoppingBasket, Tag } from "lucide-react";
+import Link from "next/link";
 
-const categories = [
-  { name: "All", icon: <ShoppingBasket className="w-4 h-4" />, slug: "all" },
-  { name: "T-shirts", icon: <Shirt className="w-4 h-4" />, slug: "t-shirts" },
-  { name: "Shoes", icon: <Footprints className="w-4 h-4" />, slug: "shoes" },
-  {
-    name: "Accessories",
-    icon: <Glasses className="w-4 h-4" />,
-    slug: "accessories",
-  },
-  { name: "Bags", icon: <Briefcase className="w-4 h-4" />, slug: "bags" },
-  { name: "Dresses", icon: <Venus className="w-4 h-4" />, slug: "dresses" },
-  { name: "Jackets", icon: <Shirt className="w-4 h-4" />, slug: "jackets" },
-  { name: "Gloves", icon: <Hand className="w-4 h-4" />, slug: "gloves" },
-];
+type Category = {
+  id: number;
+  name: string;
+  slug: string;
+  product_count: number | string;
+};
 
-const Categories = () => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
+const Categories = async ({
+  activeCategory,
+  sort,
+  search,
+}: {
+  activeCategory?: string;
+  sort?: string;
+  search?: string;
+}) => {
+  let categories: Category[] = [];
+  try {
+    categories = (await apiFetch<Category[]>("/categories")).data;
+  } catch {
+    // Danh sách sản phẩm vẫn dùng được nếu API danh mục tạm thời lỗi.
+  }
 
-  const selectedCategory = searchParams.get("category") || "all";
-
-  const handleChange = (value: string | null) => {
-    const params = new URLSearchParams(searchParams);
-    params.set("category", value || "all");
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  const items = [
+    { id: 0, name: "Tất cả", slug: "all", product_count: 0 },
+    ...categories,
+  ];
+  const buildHref = (slug: string) => {
+    const params = new URLSearchParams();
+    if (slug !== "all") params.set("category", slug);
+    if (sort) params.set("sort", sort);
+    if (search) params.set("search", search);
+    return `/products${params.size ? `?${params.toString()}` : ""}`;
   };
 
   return (
     <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 -mx-1 px-1 scrollbar-hide">
-      {categories.map((category) => {
-        const active = category.slug === selectedCategory;
+      {items.map((category) => {
+        const active = category.slug === (activeCategory || "all");
         return (
-          <button
-            key={category.name}
-            onClick={() => handleChange(category.slug)}
-            className={`flex items-center gap-2 shrink-0 px-3.5 py-2 rounded-full text-sm border transition-colors cursor-pointer ${
+          <Link
+            key={category.id}
+            href={buildHref(category.slug)}
+            scroll={false}
+            className={`flex items-center gap-2 shrink-0 px-3.5 py-2 rounded-full text-sm border transition-colors ${
               active
                 ? "bg-ink text-paper border-ink"
                 : "bg-white text-muted border-line hover:border-ink/40"
             }`}
           >
-            {category.icon}
+            {category.slug === "all" ? (
+              <ShoppingBasket className="w-4 h-4" />
+            ) : (
+              <Tag className="w-4 h-4" />
+            )}
             {category.name}
-          </button>
+          </Link>
         );
       })}
     </div>

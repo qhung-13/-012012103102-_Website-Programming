@@ -19,13 +19,15 @@ const RegisterPage = () => {
     setLoading(true);
     try {
       await register(form.name, form.email, form.password);
-      toast.success("Account created! Welcome to TRENDLAMA.");
+      toast.success(
+        "Tạo tài khoản thành công. Chào mừng bạn đến với TRENDLAMA!",
+      );
       router.push("/");
     } catch (err) {
       const message =
         err instanceof ApiError
           ? err.message
-          : "Something went wrong. Please try again.";
+          : "Đã xảy ra lỗi. Vui lòng thử lại.";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -42,16 +44,16 @@ const RegisterPage = () => {
         </Link>
         <div>
           <span className="tag-mark text-xs uppercase tracking-[0.2em] text-gold font-mono">
-            Join the club
+            Gia nhập cộng đồng
           </span>
           <h2 className="font-display text-4xl tracking-wide mt-2 leading-[0.95]">
-            NEW SEASON.
+            MÙA MỚI.
             <br />
-            NEW YOU.
+            PHONG CÁCH MỚI.
           </h2>
           <p className="text-paper/60 text-sm mt-3 max-w-xs">
-            Create an account for early drops, order tracking and member
-            pricing.
+            Tạo tài khoản để nhận tin sản phẩm mới, theo dõi đơn hàng và hưởng
+            ưu đãi thành viên.
           </p>
         </div>
         <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden">
@@ -62,16 +64,14 @@ const RegisterPage = () => {
       {/* FORM */}
       <div className="flex flex-col justify-center gap-6 p-8 sm:p-12 bg-white">
         <div>
-          <h1 className="font-display text-3xl tracking-wide">
-            Create account
-          </h1>
+          <h1 className="font-display text-3xl tracking-wide">Tạo tài khoản</h1>
           <p className="text-sm text-muted mt-1">
-            Already a member?{" "}
+            Đã có tài khoản?{" "}
             <Link
               href="/login"
               className="text-ink font-medium underline hover:text-gold-dark"
             >
-              Sign in
+              Đăng nhập
             </Link>
           </p>
         </div>
@@ -79,7 +79,7 @@ const RegisterPage = () => {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="name" className="text-xs text-muted font-medium">
-              Full name
+              Họ và tên
             </label>
             <div className="flex items-center gap-2 border border-line rounded-xl px-3 py-2.5 focus-within:border-gold-dark transition-colors">
               <User className="w-4 h-4 text-muted shrink-0" />
@@ -87,7 +87,9 @@ const RegisterPage = () => {
                 id="name"
                 type="text"
                 required
-                placeholder="John Doe"
+                minLength={2}
+                maxLength={150}
+                placeholder="Nguyễn Văn An"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className="text-sm outline-none w-full"
@@ -105,6 +107,7 @@ const RegisterPage = () => {
                 id="email"
                 type="email"
                 required
+                maxLength={150}
                 placeholder="johndoe@gmail.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -118,7 +121,7 @@ const RegisterPage = () => {
               htmlFor="password"
               className="text-xs text-muted font-medium"
             >
-              Password
+              Mật khẩu
             </label>
             <div className="flex items-center gap-2 border border-line rounded-xl px-3 py-2.5 focus-within:border-gold-dark transition-colors">
               <Lock className="w-4 h-4 text-muted shrink-0" />
@@ -126,7 +129,9 @@ const RegisterPage = () => {
                 id="password"
                 type="password"
                 required
-                placeholder="At least 8 characters"
+                minLength={8}
+                maxLength={72}
+                placeholder="Từ 8 đến 72 ký tự"
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="text-sm outline-none w-full"
@@ -139,19 +144,19 @@ const RegisterPage = () => {
             disabled={loading}
             className="mt-2 w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2 text-sm font-medium disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            {loading ? "Creating account..." : "Create account"}
+            {loading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
 
           <p className="text-xs text-muted text-center leading-relaxed">
-            By signing up, you agree to our{" "}
-            <span className="underline hover:text-ink cursor-pointer">
-              Terms & Conditions
-            </span>{" "}
-            and{" "}
-            <span className="underline hover:text-ink cursor-pointer">
-              Privacy Policy
-            </span>
+            Khi đăng ký, bạn đồng ý với{" "}
+            <Link href="/terms" className="underline hover:text-ink">
+              Điều khoản sử dụng
+            </Link>{" "}
+            và{" "}
+            <Link href="/privacy" className="underline hover:text-ink">
+              Chính sách quyền riêng tư
+            </Link>
             .
           </p>
         </form>

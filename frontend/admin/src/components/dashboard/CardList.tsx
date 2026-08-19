@@ -21,17 +21,32 @@ type ApiOrder = {
   total: number;
 };
 
-const CardList = ({ title }: { title: string }) => {
+const statusLabels: Record<string, string> = {
+  pending: "Chờ xác nhận",
+  processing: "Đang xử lý",
+  success: "Hoàn tất",
+  failed: "Thất bại",
+  cancelled: "Đã hủy",
+};
+
+const CardList = ({
+  title,
+  type,
+}: {
+  title: string;
+  type: "products" | "orders";
+}) => {
   const { token } = useAuthStore();
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        if (title === "Popular Products") {
+        if (type === "products") {
           const res = await apiFetch<ApiProduct[]>(
             "/products?limit=5&sort=newest",
           );
@@ -40,24 +55,27 @@ const CardList = ({ title }: { title: string }) => {
           const res = await apiFetch<ApiOrder[]>("/orders?limit=5", { token });
           setOrders(res.data);
         }
+        setLoadError(false);
       } catch {
-        // silently ignore — dashboard widgets shouldn't crash the page
+        setLoadError(true);
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, [title, token]);
+  }, [type, token]);
 
   return (
     <div className="">
       <h1 className="text-lg font-medium mb-6">{title}</h1>
       <div className="flex flex-col gap-2">
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
-        ) : title === "Popular Products" ? (
+          <p className="text-sm text-muted-foreground">Đang tải...</p>
+        ) : loadError ? (
+          <p className="text-sm text-destructive">Không thể tải dữ liệu.</p>
+        ) : type === "products" ? (
           products.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No products yet.</p>
+            <p className="text-sm text-muted-foreground">Chưa có sản phẩm.</p>
           ) : (
             products.map((item) => (
               <Card
@@ -86,7 +104,7 @@ const CardList = ({ title }: { title: string }) => {
             ))
           )
         ) : orders.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No orders yet.</p>
+          <p className="text-sm text-muted-foreground">Chưa có đơn hàng.</p>
         ) : (
           orders.map((item) => (
             <Card
@@ -98,10 +116,11 @@ const CardList = ({ title }: { title: string }) => {
               </div>
               <CardContent className="flex-1 p-0">
                 <CardTitle className="text-sm font-medium">
-                  Order Payment
+                  Đơn hàng #{item.id}
                 </CardTitle>
                 <Badge variant="secondary" className="capitalize">
-                  {item.shipping_name} · {item.status}
+                  {item.shipping_name} ·{" "}
+                  {statusLabels[item.status] ?? item.status}
                 </Badge>
               </CardContent>
               <CardFooter className="p-0 font-mono text-sm">

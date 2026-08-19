@@ -7,6 +7,7 @@ export type ProductType = {
   shortDescription: string;
   description: string;
   price: number;
+  stock: number;
   sizes: string[];
   colors: string[];
   images: Record<string, string>;
@@ -42,6 +43,7 @@ export function mapApiProduct(p: ApiProductType): ProductType {
     shortDescription: p.short_description ?? "",
     description: p.description ?? "",
     price: Number(p.price),
+    stock: Number(p.stock),
     sizes: p.sizes ?? [],
     colors: p.colors ?? [],
     images: p.images ?? {},
@@ -60,32 +62,32 @@ export type CartItemType = ProductType & {
 export type CartItemsType = CartItemType[];
 
 export const shippingFormSchema = z.object({
-  name: z.string().min(1, "Name is required!"),
-  email: z.email().min(1, "Email is required!"),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Vui lòng nhập họ tên.")
+    .max(150, "Họ tên quá dài."),
+  email: z.email("Email không hợp lệ."),
   phone: z
     .string()
-    .min(7, "Phone number must be between 7 and 10 digits!")
-    .max(10, "Phone number must be between 7 and 10 digits!")
-    .regex(/^\d+$/, "Phone number must contain only numbers!"),
-  address: z.string().min(1, "Address is required!"),
-  city: z.string().min(1, "City is required!"),
+    .trim()
+    .regex(/^[0-9+() .-]{8,20}$/, "Số điện thoại không hợp lệ."),
+  address: z
+    .string()
+    .trim()
+    .min(5, "Vui lòng nhập địa chỉ.")
+    .max(200, "Địa chỉ quá dài."),
+  city: z
+    .string()
+    .trim()
+    .min(2, "Vui lòng nhập tỉnh/thành phố.")
+    .max(50, "Tên tỉnh/thành phố quá dài."),
 });
 
 export type ShippingFormInputs = z.infer<typeof shippingFormSchema>;
 
 export const paymentFormSchema = z.object({
-  cardHolder: z.string().min(1, "Card holder is required!"),
-  cardNumber: z
-    .string()
-    .min(16, "Card Number is required!")
-    .max(16, "Card Number is required!"),
-  expirationDate: z
-    .string()
-    .regex(
-      /^(0[1-9]|1[0-2])\/\d{2}$/,
-      "Expiration date must be in MM/YY format!",
-    ),
-  cvv: z.string().min(3, "CVV is required!").max(3, "CVV is required!"),
+  paymentMethod: z.enum(["cod", "bank_transfer"]),
 });
 
 export type PaymentFormInputs = z.infer<typeof paymentFormSchema>;

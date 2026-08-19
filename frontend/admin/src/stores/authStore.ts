@@ -13,43 +13,74 @@ type AuthStateType = {
   user: AdminUserType | null;
   token: string | null;
   hasHydrated: boolean;
+  sessionChecked: boolean;
 };
 
 type AuthActionsType = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  validateSession: () => Promise<boolean>;
 };
 
 const useAuthStore = create<AuthStateType & AuthActionsType>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       hasHydrated: false,
+      sessionChecked: false,
 
       login: async (email, password) => {
-        const res = await apiFetch<{ user: AdminUserType; token: string }>("/auth/login", {
-          method: "POST",
-          body: { email, password },
-        });
+        const res = await apiFetch<{ user: AdminUserType; token: string }>(
+          "/auth/login",
+          {
+            method: "POST",
+            body: { email, password },
+          },
+        );
 
         if (res.data.user.role !== "admin") {
-          throw new ApiError("This account does not have admin access.", 403);
+          throw new ApiError("Tài khoản này không có quyền quản trị.", 403);
         }
 
-        set({ user: res.data.user, token: res.data.token });
+        set({
+          user: res.data.user,
+          token: res.data.token,
+          sessionChecked: true,
+        });
       },
 
-      logout: () => set({ user: null, token: null }),
+      logout: () => set({ user: null, token: null, sessionChecked: true }),
+
+      validateSession: async () => {
+        const token = get().token;
+        if (!token) {
+          set({ user: null, sessionChecked: true });
+          return false;
+        }
+        try {
+          const res = await apiFetch<AdminUserType>("/auth/me", { token });
+          if (res.data.role !== "admin")
+            throw new ApiError("Không có quyền quản trị.", 403);
+          set({ user: res.data, sessionChecked: true });
+          return true;
+        } catch {
+          set({ user: null, token: null, sessionChecked: true });
+          return false;
+        }
+      },
     }),
     {
       name: "admin-auth",
       storage: createJSONStorage(() => localStorage),
       onRehydrateStorage: () => (state) => {
-        if (state) state.hasHydrated = true;
+        if (state) {
+          state.hasHydrated = true;
+          state.sessionChecked = false;
+        }
       },
-    }
-  )
+    },
+  ),
 );
 
 export { ApiError };

@@ -22,29 +22,33 @@ const AdminShell = ({
 }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, hasHydrated } = useAuthStore();
+  const { user, hasHydrated, sessionChecked, validateSession } = useAuthStore();
   const isLoginPage = pathname === "/login";
 
   useEffect(() => {
     if (!hasHydrated) return;
-    if (!user && !isLoginPage) {
+    if (!sessionChecked) {
+      validateSession();
+      return;
+    }
+    if ((!user || user.role !== "admin") && !isLoginPage) {
       router.replace("/login");
     }
     if (user && isLoginPage) {
       router.replace("/");
     }
-  }, [hasHydrated, user, isLoginPage, router]);
+  }, [hasHydrated, sessionChecked, user, isLoginPage, router, validateSession]);
 
   if (isLoginPage) {
     return <>{children}</>;
   }
 
-  if (!hasHydrated || !user) {
+  if (!hasHydrated || !sessionChecked || !user || user.role !== "admin") {
     // Avoid flashing the dashboard chrome before we know whether the
     // visitor is authenticated.
     return (
       <div className="w-full min-h-screen flex items-center justify-center text-sm text-muted-foreground">
-        Loading...
+        Đang kiểm tra phiên đăng nhập...
       </div>
     );
   }

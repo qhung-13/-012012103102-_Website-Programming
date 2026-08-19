@@ -3,17 +3,28 @@
 import Image from "next/image";
 import Link from "next/link";
 import SearchBar from "./SearchBar";
-import { Heart, User, LogOut, Package } from "lucide-react";
+import { Heart, User, LogOut, Package, Search } from "lucide-react";
 import ShoppingCartIcon from "./ShoppingCartIcon";
 import useWishlistStore from "@/stores/wishlistStore";
 import useAuthStore from "@/stores/authStore";
-import { useState, useRef, useEffect } from "react";
+import { Suspense, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 
 const Navbar = () => {
-  const { wishlist, hasHydrated: wishlistHydrated } = useWishlistStore();
-  const { user, hasHydrated: authHydrated, logout } = useAuthStore();
+  const {
+    wishlist,
+    hasHydrated: wishlistHydrated,
+    syncWishlist,
+    clearWishlist,
+  } = useWishlistStore();
+  const {
+    user,
+    token,
+    hasHydrated: authHydrated,
+    logout,
+    validateSession,
+  } = useAuthStore();
   const wishlistCount = wishlistHydrated ? wishlist.length : 0;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -29,10 +40,18 @@ const Navbar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!authHydrated || !token) return;
+    validateSession().then((valid) => {
+      if (valid) syncWishlist(token).catch(() => undefined);
+    });
+  }, [authHydrated, token, validateSession, syncWishlist]);
+
   const handleLogout = () => {
     logout();
+    clearWishlist();
     setMenuOpen(false);
-    toast.success("Signed out.");
+    toast.success("Đã đăng xuất.");
     router.push("/");
   };
 
@@ -54,28 +73,34 @@ const Navbar = () => {
         </Link>
         {/* RIGHT */}
         <div className="flex items-center gap-4 sm:gap-6">
-          <SearchBar />
+          <Suspense
+            fallback={
+              <div className="hidden sm:block w-36 h-9 rounded-full bg-paper-dim animate-pulse" />
+            }
+          >
+            <SearchBar />
+          </Suspense>
           <Link
             href="/products"
             className="hidden md:block text-sm text-ink hover:text-gold-dark transition-colors"
           >
-            Shop
+            Sản phẩm
           </Link>
           <Link
             href="/blog"
             className="hidden md:block text-sm text-ink hover:text-gold-dark transition-colors"
           >
-            Blog
+            Bài viết
           </Link>
           <Link
             href="/about"
             className="hidden md:block text-sm text-ink hover:text-gold-dark transition-colors"
           >
-            About
+            Giới thiệu
           </Link>
           <Link
             href="/wishlist"
-            aria-label="Wishlist"
+            aria-label="Danh sách yêu thích"
             className="hidden sm:block relative"
           >
             <Heart className="w-[18px] h-[18px] text-ink/70 hover:text-gold-dark transition-colors" />
@@ -93,6 +118,8 @@ const Navbar = () => {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((v) => !v)}
+                aria-label="Mở menu tài khoản"
+                aria-expanded={menuOpen}
                 className="w-8 h-8 rounded-full bg-ink text-paper text-xs font-medium flex items-center justify-center cursor-pointer hover:bg-gold-dark transition-colors"
               >
                 {user.name.charAt(0).toUpperCase()}
@@ -109,14 +136,14 @@ const Navbar = () => {
                     className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-paper-dim transition-colors"
                   >
                     <Package className="w-3.5 h-3.5" />
-                    My Orders
+                    Đơn hàng của tôi
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="flex items-center gap-2 px-4 py-2 text-sm text-left hover:bg-paper-dim transition-colors cursor-pointer text-red-500"
                   >
                     <LogOut className="w-3.5 h-3.5" />
-                    Sign out
+                    Đăng xuất
                   </button>
                 </div>
               )}
@@ -127,10 +154,31 @@ const Navbar = () => {
               className="flex items-center gap-1.5 text-sm font-medium border border-ink rounded-full pl-3 pr-3.5 py-1.5 hover:bg-ink hover:text-paper transition-colors"
             >
               <User className="w-[14px] h-[14px]" />
-              <span className="hidden sm:inline">Sign in</span>
+              <span className="hidden sm:inline">Đăng nhập</span>
             </Link>
           )}
         </div>
+      </div>
+      <div className="flex md:hidden items-center gap-5 overflow-x-auto py-2 text-sm border-b border-line">
+        <Link href="/products" className="shrink-0">
+          Sản phẩm
+        </Link>
+        <Link href="/blog" className="shrink-0">
+          Bài viết
+        </Link>
+        <Link href="/about" className="shrink-0">
+          Giới thiệu
+        </Link>
+        <Link href="/contact" className="shrink-0">
+          Liên hệ
+        </Link>
+        <Link
+          href="/products"
+          aria-label="Tìm sản phẩm"
+          className="ml-auto shrink-0"
+        >
+          <Search className="w-4 h-4" />
+        </Link>
       </div>
     </nav>
   );

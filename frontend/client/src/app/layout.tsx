@@ -22,8 +22,9 @@ const bebasNeue = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  title: "TRENDLAMA — Best Clothes",
-  description: "Trendlama is the best place to find the best clothes",
+  title: "TRENDLAMA — Thời trang cho mỗi ngày",
+  description:
+    "Khám phá thời trang hiện đại, thoải mái và bền vững tại TRENDLAMA.",
 };
 
 export default function RootLayout({
@@ -32,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="vi">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${bebasNeue.variable} antialiased font-sans bg-paper text-ink`}
       >

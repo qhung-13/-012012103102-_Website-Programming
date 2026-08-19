@@ -23,7 +23,7 @@ const BlogCard = ({ post }: { post: BlogPostType }) => {
       <div className="flex flex-col gap-2 px-5 pb-5">
         {post.date && (
           <p className="text-xs text-muted font-mono">
-            {new Date(post.date).toLocaleDateString("en-US", {
+            {new Date(post.date).toLocaleDateString("vi-VN", {
               month: "short",
               day: "numeric",
               year: "numeric",

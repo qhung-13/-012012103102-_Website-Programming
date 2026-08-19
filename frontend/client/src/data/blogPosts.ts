@@ -30,7 +30,7 @@ export function mapApiBlogPost(p: ApiBlogPostType): BlogPostType {
     title: p.title,
     excerpt: p.excerpt ?? "",
     content: p.content ?? "",
-    category: p.category ?? "Journal",
+    category: p.category ?? "Bài viết",
     date: p.published_at ?? "",
     cover: p.cover_image,
   };

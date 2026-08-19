@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Moon, Settings, Sun, User } from "lucide-react";
+import { LogOut, Moon, Sun } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -18,10 +18,12 @@ import useAuthStore from "@/stores/authStore";
 import { toast } from "react-toastify";
 
 const pageTitles: Record<string, string> = {
-  "/": "Dashboard",
-  "/products": "Products",
-  "/users": "Users",
-  "/payments": "Payments",
+  "/": "Tổng quan",
+  "/products": "Sản phẩm",
+  "/categories": "Danh mục",
+  "/blog": "Bài viết",
+  "/users": "Người dùng",
+  "/payments": "Đơn hàng",
 };
 
 const Navbar = () => {
@@ -32,7 +34,7 @@ const Navbar = () => {
 
   const handleLogout = () => {
     logout();
-    toast.success("Signed out.");
+    toast.success("Đã đăng xuất.");
     router.push("/login");
   };
 
@@ -46,7 +48,7 @@ const Navbar = () => {
   const title =
     pageTitles[pathname] ??
     pathname.split("/").filter(Boolean).pop()?.replace(/-/g, " ") ??
-    "Dashboard";
+    "Tổng quan";
 
   return (
     <nav className="px-4 py-3 flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b">
@@ -63,18 +65,18 @@ const Navbar = () => {
             <Button variant="outline" size="icon">
               <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
+              <span className="sr-only">Đổi giao diện sáng/tối</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setTheme("light")}>
-              Light
+              Sáng
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("dark")}>
-              Dark
+              Tối
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setTheme("system")}>
-              System
+              Theo hệ thống
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -87,19 +89,11 @@ const Navbar = () => {
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent sideOffset={10} align="end">
-            <DropdownMenuLabel>{user?.name ?? "My Account"}</DropdownMenuLabel>
+            <DropdownMenuLabel>{user?.name ?? "Tài khoản"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="h-[1.2rem] w-[1.2rem] mr-2" />
-              Profile
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="h-[1.2rem] w-[1.2rem] mr-2" />
-              Settings
-            </DropdownMenuItem>
             <DropdownMenuItem variant="destructive" onClick={handleLogout}>
               <LogOut className="h-[1.2rem] w-[1.2rem] mr-2" />
-              Logout
+              Đăng xuất
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

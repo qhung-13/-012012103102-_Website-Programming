@@ -22,7 +22,10 @@ type AuthActionsType = {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
-  updateProfile: (data: Partial<Pick<AuthUserType, "name" | "phone" | "address">>) => Promise<void>;
+  updateProfile: (
+    data: Partial<Pick<AuthUserType, "name" | "phone" | "address">>,
+  ) => Promise<void>;
+  validateSession: () => Promise<boolean>;
 };
 
 const useAuthStore = create<AuthStateType & AuthActionsType>()(
@@ -33,18 +36,24 @@ const useAuthStore = create<AuthStateType & AuthActionsType>()(
       hasHydrated: false,
 
       login: async (email, password) => {
-        const res = await apiFetch<{ user: AuthUserType; token: string }>("/auth/login", {
-          method: "POST",
-          body: { email, password },
-        });
+        const res = await apiFetch<{ user: AuthUserType; token: string }>(
+          "/auth/login",
+          {
+            method: "POST",
+            body: { email, password },
+          },
+        );
         set({ user: res.data.user, token: res.data.token });
       },
 
       register: async (name, email, password) => {
-        const res = await apiFetch<{ user: AuthUserType; token: string }>("/auth/register", {
-          method: "POST",
-          body: { name, email, password },
-        });
+        const res = await apiFetch<{ user: AuthUserType; token: string }>(
+          "/auth/register",
+          {
+            method: "POST",
+            body: { name, email, password },
+          },
+        );
         set({ user: res.data.user, token: res.data.token });
       },
 
@@ -59,6 +68,19 @@ const useAuthStore = create<AuthStateType & AuthActionsType>()(
         });
         set({ user: res.data });
       },
+
+      validateSession: async () => {
+        const token = get().token;
+        if (!token) return false;
+        try {
+          const res = await apiFetch<AuthUserType>("/auth/me", { token });
+          set({ user: res.data });
+          return true;
+        } catch {
+          set({ user: null, token: null });
+          return false;
+        }
+      },
     }),
     {
       name: "auth",
@@ -66,8 +88,8 @@ const useAuthStore = create<AuthStateType & AuthActionsType>()(
       onRehydrateStorage: () => (state) => {
         if (state) state.hasHydrated = true;
       },
-    }
-  )
+    },
+  ),
 );
 
 export { ApiError };
