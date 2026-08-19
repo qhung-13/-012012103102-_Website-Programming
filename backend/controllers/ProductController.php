@@ -11,15 +11,16 @@ class ProductController
     {
         $pdo = getDbConnection();
 
+        $adminView = Request::query('admin') === '1' && (Auth::user()['role'] ?? '') === 'admin';
         $page = max(1, (int) Request::query('page', 1));
-        $limit = min(48, max(1, (int) Request::query('limit', 12)));
+        $limit = min($adminView ? 100 : 48, max(1, (int) Request::query('limit', 12)));
         $offset = ($page - 1) * $limit;
 
         $category = Request::query('category');
         $search = Request::query('search');
         $sort = Request::query('sort', 'newest');
 
-        $where = ["p.status = 'active'"];
+        $where = $adminView ? [] : ["p.status = 'active'"];
         $params = [];
 
         if ($category && $category !== 'all') {
@@ -38,7 +39,7 @@ class ProductController
             default => 'p.created_at DESC',
         };
 
-        $whereSql = 'WHERE ' . implode(' AND ', $where);
+        $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
         $countStmt = $pdo->prepare(
             "SELECT COUNT(*) FROM products p LEFT JOIN categories c ON c.id = p.category_id $whereSql"
@@ -55,10 +56,7 @@ class ProductController
              LIMIT $limit OFFSET $offset"
         );
         $stmt->execute($params);
-        $products = $stmt->fetchAll();
-
-        $products = array_map([self::class, 'attachImages'], $products);
-        $products = array_map([self::class, 'formatProduct'], $products);
+        $products = self::presentMany($stmt->fetchAll());
 
         Response::success($products, 'OK', 200, [
             'page' => $page,
@@ -84,11 +82,14 @@ class ProductController
         $product = $stmt->fetch();
 
         if (!$product) {
-            Response::error('Product not found.', 404);
+            Response::error('Không tìm thấy sản phẩm.', 404);
         }
 
-        $product = self::attachImages($product);
-        Response::success(self::formatProduct($product));
+        if ($product['status'] !== 'active' && (Auth::user()['role'] ?? '') !== 'admin') {
+            Response::error('Không tìm thấy sản phẩm.', 404);
+        }
+
+        Response::success(self::present($product));
     }
 
     /** POST /api/products — admin only */
@@ -175,7 +176,10 @@ class ProductController
         $pdo = getDbConnection();
         $stmt = $pdo->prepare('DELETE FROM products WHERE id = ?');
         $stmt->execute([(int) $params['id']]);
-        Response::success(null, 'Product deleted.');
+        if ($stmt->rowCount() === 0) {
+            Response::error('Không tìm thấy sản phẩm.', 404);
+        }
+        Response::success(null, 'Đã xóa sản phẩm.');
     }
 
     // -----------------------------------------------------------------
@@ -186,29 +190,74 @@ class ProductController
         $errors = [];
 
         if (!$partial || array_key_exists('name', $body)) {
-            if (empty($body['name']) || strlen($body['name']) < 2) {
-                $errors['name'] = 'Name is required.';
+            if (!isset($body['name']) || !is_string($body['name']) || strlen(trim($body['name'])) < 2) {
+                $errors['name'] = 'Tên sản phẩm phải có từ 2 đến 200 ký tự.';
+            }
+            if (is_string($body['name'] ?? null) && strlen(trim($body['name'])) > 200) {
+                $errors['name'] = 'Tên sản phẩm không được dài quá 200 ký tự.';
             }
         }
         if (!$partial || array_key_exists('price', $body)) {
-            if (!isset($body['price']) || !is_numeric($body['price']) || $body['price'] < 0) {
-                $errors['price'] = 'Price must be a positive number.';
+            if (!isset($body['price']) || !is_numeric($body['price']) || $body['price'] < 0 || $body['price'] > 99999999.99) {
+                $errors['price'] = 'Giá phải là số từ 0 đến 99.999.999,99.';
+            }
+        }
+
+        if (array_key_exists('stock', $body) && (
+            !is_numeric($body['stock'])
+            || (float) $body['stock'] !== (float) (int) $body['stock']
+            || (int) $body['stock'] < 0
+            || (int) $body['stock'] > 4294967295
+        )) {
+            $errors['stock'] = 'Tồn kho phải là số nguyên không âm.';
+        }
+        if (array_key_exists('short_description', $body) && $body['short_description'] !== null) {
+            if (!is_string($body['short_description']) || strlen($body['short_description']) > 500) {
+                $errors['short_description'] = 'Mô tả ngắn phải là văn bản không quá 500 ký tự.';
+            }
+        }
+        if (array_key_exists('description', $body) && $body['description'] !== null) {
+            if (!is_string($body['description']) || strlen($body['description']) > 50000) {
+                $errors['description'] = 'Mô tả chi tiết phải là văn bản không quá 50.000 ký tự.';
+            }
+        }
+        foreach (['sizes', 'colors', 'images'] as $listField) {
+            if (array_key_exists($listField, $body) && !is_array($body[$listField])) {
+                $errors[$listField] = 'Dữ liệu phải là một danh sách.';
+            }
+        }
+        if (array_key_exists('status', $body) && !in_array($body['status'], ['active', 'draft'], true)) {
+            $errors['status'] = 'Trạng thái sản phẩm không hợp lệ.';
+        }
+        if (array_key_exists('category_id', $body) && $body['category_id'] !== null && $body['category_id'] !== '') {
+            $categoryId = filter_var($body['category_id'], FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($categoryId === false) {
+                $errors['category_id'] = 'Danh mục đã chọn không hợp lệ.';
+            } else {
+                $pdo = getDbConnection();
+                $stmt = $pdo->prepare('SELECT id FROM categories WHERE id = ?');
+                $stmt->execute([$categoryId]);
+                if (!$stmt->fetch()) $errors['category_id'] = 'Danh mục đã chọn không tồn tại.';
             }
         }
 
         if ($errors) {
-            Response::error('Validation failed.', 422, $errors);
+            Response::error('Dữ liệu sản phẩm chưa hợp lệ.', 422, $errors);
         }
 
         $data = [];
         foreach (['name', 'short_description', 'description', 'status'] as $field) {
-            if (array_key_exists($field, $body)) $data[$field] = $body[$field];
+            if (array_key_exists($field, $body)) $data[$field] = is_string($body[$field]) ? trim($body[$field]) : $body[$field];
         }
-        if (array_key_exists('category_id', $body)) $data['category_id'] = $body['category_id'] ?: null;
+        if (array_key_exists('category_id', $body)) {
+            $data['category_id'] = $body['category_id'] === null || $body['category_id'] === ''
+                ? null
+                : (int) $body['category_id'];
+        }
         if (array_key_exists('price', $body)) $data['price'] = (float) $body['price'];
         if (array_key_exists('stock', $body)) $data['stock'] = (int) ($body['stock'] ?? 0);
-        if (array_key_exists('sizes', $body)) $data['sizes'] = is_array($body['sizes']) ? $body['sizes'] : [];
-        if (array_key_exists('colors', $body)) $data['colors'] = is_array($body['colors']) ? $body['colors'] : [];
+        if (array_key_exists('sizes', $body)) $data['sizes'] = self::cleanStringList($body['sizes']);
+        if (array_key_exists('colors', $body)) $data['colors'] = self::cleanStringList($body['colors']);
         if (!$partial) {
             // Creating a product: make sure every column the INSERT needs
             // has a sane default even when the client didn't send it.
@@ -231,11 +280,18 @@ class ProductController
         $stmt = $pdo->prepare(
             'INSERT INTO product_images (product_id, color, image_path, sort_order) VALUES (?, ?, ?, ?)'
         );
-        foreach (array_values($images) as $i => $image) {
+        foreach (array_slice(array_values($images), 0, 20) as $i => $image) {
+            if (!is_array($image)) {
+                continue;
+            }
+            $path = trim((string) ($image['path'] ?? $image['image_path'] ?? ''));
+            if (!preg_match('#^/(uploads|products)/[A-Za-z0-9/_-]+\.(jpe?g|png|webp|gif)$#i', $path)) {
+                continue;
+            }
             $stmt->execute([
                 $productId,
-                $image['color'] ?? null,
-                $image['path'] ?? $image['image_path'] ?? '',
+                isset($image['color']) ? substr(trim((string) $image['color']), 0, 50) : null,
+                $path,
                 $i,
             ]);
         }
@@ -265,15 +321,60 @@ class ProductController
         $product['sizes'] = json_decode($product['sizes'] ?? '[]', true) ?? [];
         $product['colors'] = json_decode($product['colors'] ?? '[]', true) ?? [];
         $product['images'] = $images;
+        $product['id'] = (int) $product['id'];
+        $product['category_id'] = $product['category_id'] !== null ? (int) $product['category_id'] : null;
         $product['price'] = (float) $product['price'];
+        $product['stock'] = (int) $product['stock'];
 
         return $product;
+    }
+
+    public static function present(array $product): array
+    {
+        return self::formatProduct(self::attachImages($product));
+    }
+
+    /** Định dạng nhiều sản phẩm với một truy vấn ảnh duy nhất, tránh N+1 query. */
+    public static function presentMany(array $products): array
+    {
+        if (!$products) return [];
+
+        $ids = array_map(static fn (array $product): int => (int) $product['id'], $products);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare(
+            "SELECT product_id, color, image_path
+             FROM product_images
+             WHERE product_id IN ($placeholders)
+             ORDER BY sort_order ASC"
+        );
+        $stmt->execute($ids);
+
+        $imagesByProduct = [];
+        foreach ($stmt->fetchAll() as $image) {
+            $imagesByProduct[(int) $image['product_id']][] = $image;
+        }
+
+        return array_map(static function (array $product) use ($imagesByProduct): array {
+            $product['images_raw'] = $imagesByProduct[(int) $product['id']] ?? [];
+            return self::formatProduct($product);
+        }, $products);
+    }
+
+    private static function cleanStringList($value): array
+    {
+        if (!is_array($value)) return [];
+        $clean = array_map(
+            static fn ($item): string => is_string($item) ? substr(trim($item), 0, 50) : '',
+            $value
+        );
+        return array_values(array_slice(array_unique(array_filter($clean)), 0, 30));
     }
 
     private static function uniqueSlug(string $name, ?int $ignoreId = null): string
     {
         $pdo = getDbConnection();
-        $base = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $name), '-'));
+        $base = Slugger::make($name, 'san-pham');
         $slug = $base;
         $i = 1;
 
