@@ -27,8 +27,20 @@ class Auth
             return null;
         }
 
-        self::$currentUser = $payload;
-        return $payload;
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare(
+            'SELECT id, name, email, role, phone, address, avatar, status, created_at FROM users WHERE id = ? LIMIT 1'
+        );
+        $stmt->execute([(int) $payload['sub']]);
+        $user = $stmt->fetch();
+
+        if (!$user || $user['status'] !== 'active') {
+            return null;
+        }
+
+        // Quyền và trạng thái luôn lấy từ database, không tin dữ liệu cũ trong token.
+        self::$currentUser = array_merge($user, ['sub' => (int) $user['id']]);
+        return self::$currentUser;
     }
 
     /** Aborts with 401 if there is no valid, logged-in user. */
@@ -36,7 +48,7 @@ class Auth
     {
         $user = self::user();
         if (!$user) {
-            Response::error('Unauthorized. Please log in.', 401);
+            Response::error('Phiên đăng nhập không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.', 401);
         }
         return $user;
     }
@@ -46,7 +58,7 @@ class Auth
     {
         $user = self::requireAuth();
         if (($user['role'] ?? '') !== 'admin') {
-            Response::error('Forbidden. Admin access required.', 403);
+            Response::error('Bạn không có quyền quản trị để thực hiện thao tác này.', 403);
         }
         return $user;
     }
