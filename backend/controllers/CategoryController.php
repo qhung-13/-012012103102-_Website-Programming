@@ -24,7 +24,7 @@ class CategoryController
         $category = $stmt->fetch();
 
         if (!$category) {
-            Response::error('Category not found.', 404);
+            Response::error('Không tìm thấy danh mục.', 404);
         }
 
         Response::success($category);
@@ -33,13 +33,16 @@ class CategoryController
     public static function store(): void
     {
         Auth::requireAdmin();
-        $name = trim((string) Request::input('name'));
+        $name = trim(Request::string('name') ?? '');
 
         if (strlen($name) < 2) {
-            Response::error('Validation failed.', 422, ['name' => 'Name is required.']);
+            Response::error('Dữ liệu danh mục chưa hợp lệ.', 422, ['name' => 'Tên danh mục phải có từ 2 đến 100 ký tự.']);
         }
 
         $pdo = getDbConnection();
+        if (strlen($name) > 100) {
+            Response::error('Dữ liệu danh mục chưa hợp lệ.', 422, ['name' => 'Tên danh mục không được dài quá 100 ký tự.']);
+        }
         $slug = self::uniqueSlug($name);
 
         $stmt = $pdo->prepare('INSERT INTO categories (name, slug) VALUES (?, ?)');
@@ -52,12 +55,15 @@ class CategoryController
     {
         Auth::requireAdmin();
         $id = (int) $params['id'];
-        $name = trim((string) Request::input('name'));
+        $name = trim(Request::string('name') ?? '');
 
         if (strlen($name) < 2) {
-            Response::error('Validation failed.', 422, ['name' => 'Name is required.']);
+            Response::error('Dữ liệu danh mục chưa hợp lệ.', 422, ['name' => 'Tên danh mục phải có từ 2 đến 100 ký tự.']);
         }
 
+        if (strlen($name) > 100) {
+            Response::error('Dữ liệu danh mục chưa hợp lệ.', 422, ['name' => 'Tên danh mục không được dài quá 100 ký tự.']);
+        }
         $pdo = getDbConnection();
         $slug = self::uniqueSlug($name, $id);
 
@@ -73,13 +79,16 @@ class CategoryController
         $pdo = getDbConnection();
         $stmt = $pdo->prepare('DELETE FROM categories WHERE id = ?');
         $stmt->execute([(int) $params['id']]);
-        Response::success(null, 'Category deleted.');
+        if ($stmt->rowCount() === 0) {
+            Response::error('Không tìm thấy danh mục.', 404);
+        }
+        Response::success(null, 'Đã xóa danh mục.');
     }
 
     private static function uniqueSlug(string $name, ?int $ignoreId = null): string
     {
         $pdo = getDbConnection();
-        $base = strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '-', $name), '-'));
+        $base = Slugger::make($name, 'danh-muc');
         $slug = $base;
         $i = 1;
 
