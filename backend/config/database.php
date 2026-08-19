@@ -17,6 +17,9 @@ function loadEnv(string $path): void
         [$key, $value] = array_pad(explode('=', $line, 2), 2, '');
         $key = trim($key);
         $value = trim($value);
+        if (strlen($value) >= 2 && (($value[0] === '"' && str_ends_with($value, '"')) || ($value[0] === "'" && str_ends_with($value, "'")))) {
+            $value = substr($value, 1, -1);
+        }
         if ($key !== '' && getenv($key) === false) {
             putenv("$key=$value");
         }
@@ -56,11 +59,14 @@ function getDbConnection(): PDO
     } catch (PDOException $e) {
         http_response_code(500);
         header('Content-Type: application/json');
-        echo json_encode([
+        $payload = [
             'success' => false,
-            'message' => 'Database connection failed.',
-            'error' => env('APP_DEBUG', 'false') === 'true' ? $e->getMessage() : null,
-        ]);
+            'message' => 'Không thể kết nối cơ sở dữ liệu.',
+        ];
+        if (filter_var(env('APP_DEBUG', 'false'), FILTER_VALIDATE_BOOL)) {
+            $payload['errors'] = ['database' => $e->getMessage()];
+        }
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }
 
