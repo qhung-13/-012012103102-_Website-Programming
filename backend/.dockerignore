@@ -12,3 +12,5 @@ uploads/avatars/*
 !uploads/.htaccess
 uploads
 !uploads/.htaccess
+!docker-entrypoint.sh
+!uploads/.htaccess
