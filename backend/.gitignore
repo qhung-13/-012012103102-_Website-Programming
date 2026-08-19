@@ -1,4 +1,5 @@
 .env
+.env.example
 vendor/
 uploads/products/*
 uploads/avatars/*
