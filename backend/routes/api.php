@@ -1,6 +1,20 @@
 <?php
 /** @var Router $router */
 
+$router->get('', static function (array $params = []): void {
+    Response::success([
+        'service' => 'TRENDLAMA API',
+        'status' => 'ok',
+    ], 'API đang hoạt động.');
+});
+$router->get('/health', static function (array $params = []): void {
+    getDbConnection()->query('SELECT 1');
+    Response::success(['status' => 'ok', 'database' => 'ok'], 'Hệ thống hoạt động bình thường.');
+});
+
+// -------------------- DASHBOARD (admin) --------------------
+$router->get('/dashboard', [DashboardController::class, 'index']);
+
 // -------------------- AUTH --------------------
 $router->post('/auth/register', [AuthController::class, 'register']);
 $router->post('/auth/login', [AuthController::class, 'login']);
@@ -38,6 +52,7 @@ $router->delete('/orders/{id}', [OrderController::class, 'destroy']);
 // -------------------- BLOG --------------------
 $router->get('/blog', [BlogController::class, 'index']);
 $router->get('/blog-admin', [BlogController::class, 'indexAdmin']);
+$router->get('/blog-admin/{id}', [BlogController::class, 'showAdmin']);
 $router->get('/blog/{id}', [BlogController::class, 'show']);
 $router->post('/blog', [BlogController::class, 'store']);
 $router->put('/blog/{id}', [BlogController::class, 'update']);
@@ -50,3 +65,7 @@ $router->delete('/wishlist/{id}', [WishlistController::class, 'destroy']);
 
 // -------------------- UPLOAD --------------------
 $router->post('/upload', [UploadController::class, 'store']);
+
+// -------------------- CONTACT / NEWSLETTER --------------------
+$router->post('/contact', [MarketingController::class, 'contact']);
+$router->post('/newsletter', [MarketingController::class, 'subscribe']);
