@@ -9,7 +9,7 @@ class Response
     {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
         exit;
     }
 
@@ -22,7 +22,7 @@ class Response
         ], $meta ? ['meta' => $meta] : []), $status);
     }
 
-    public static function error(string $message = 'Something went wrong', int $status = 400, $errors = null): void
+    public static function error(string $message = 'Đã xảy ra lỗi.', int $status = 400, $errors = null): void
     {
         self::json([
             'success' => false,
