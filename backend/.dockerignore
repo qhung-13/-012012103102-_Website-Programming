@@ -12,3 +12,4 @@ uploads/avatars/*
 !uploads/.htaccess
 uploads
 *.sh
+!uploads/.htaccess
