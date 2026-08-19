@@ -11,5 +11,4 @@ uploads/avatars/*
 !uploads/avatars/.gitkeep
 !uploads/.htaccess
 uploads
-*.sh
 !uploads/.htaccess
