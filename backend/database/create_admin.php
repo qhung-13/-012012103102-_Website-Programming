@@ -23,9 +23,23 @@ if (strlen($password) < 12 || strlen($password) > 72) {
 }
 
 $pdo = getDbConnection();
+$hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+
 $stmt = $pdo->prepare(
-    'INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, "admin", "active")
-     ON DUPLICATE KEY UPDATE name = VALUES(name), password = VALUES(password), role = "admin", status = "active"'
+    'INSERT INTO users (name, email, password, role, status)
+     VALUES (?, ?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        password = VALUES(password),
+        role = VALUES(role),
+        status = VALUES(status)'
 );
-$stmt->execute([$name, $email, password_hash($password, PASSWORD_BCRYPT)]);
+
+$stmt->execute([
+    $name,
+    $email,
+    $hashedPassword,
+    'admin',
+    'active'
+]);
 fwrite(STDOUT, "Đã tạo hoặc cập nhật tài khoản quản trị.\n");
