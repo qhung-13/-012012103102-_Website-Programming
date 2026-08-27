@@ -41,6 +41,16 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
+    const handleAuthExpired = () => {
+      logout();
+      clearWishlist();
+    };
+    window.addEventListener("trendlama:auth-expired", handleAuthExpired);
+    return () =>
+      window.removeEventListener("trendlama:auth-expired", handleAuthExpired);
+  }, [clearWishlist, logout]);
+
+  useEffect(() => {
     if (!authHydrated || !token) return;
     validateSession().then((valid) => {
       if (valid) syncWishlist(token).catch(() => undefined);
