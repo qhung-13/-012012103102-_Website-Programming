@@ -13,6 +13,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { toast } from "react-toastify";
 import { formatColor } from "@/lib/localization";
+import { getLoginRedirect } from "@/lib/authRedirect";
 
 const steps = [
   { id: 1, title: "Giỏ hàng" },
@@ -39,7 +40,8 @@ const CartPageContent = () => {
   );
 
   const { cart, removeFromCart, clearCart } = useCartStore();
-  const { token } = useAuthStore();
+  const { user, token, hasHydrated: authHydrated } = useAuthStore();
+  const checkoutPath = "/cart?step=2";
 
   const subtotal = cart.reduce(
     (acc, item) => acc + item.price * item.quantity,
@@ -50,6 +52,10 @@ const CartPageContent = () => {
 
   const handlePlaceOrder = async ({ paymentMethod }: PaymentFormInputs) => {
     if (!shippingForm) return;
+    if (!authHydrated || !user || !token) {
+      router.push(getLoginRedirect(checkoutPath));
+      return;
+    }
     setPlacingOrder(true);
     try {
       const res = await apiFetch<OrderResult>("/orders", {
@@ -84,6 +90,38 @@ const CartPageContent = () => {
       setPlacingOrder(false);
     }
   };
+
+  if (activeStep > 1 && !authHydrated) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 mt-16 mb-16 text-center">
+        <h1 className="font-display text-3xl tracking-wide">
+          Đang kiểm tra phiên đăng nhập...
+        </h1>
+        <p className="text-sm text-muted max-w-sm">
+          Vui lòng chờ trong giây lát trước khi tiếp tục thanh toán.
+        </p>
+      </div>
+    );
+  }
+
+  if (activeStep > 1 && (!user || !token)) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 mt-16 mb-16 text-center">
+        <h1 className="font-display text-3xl tracking-wide">
+          Vui lòng đăng nhập để thanh toán
+        </h1>
+        <p className="text-sm text-muted max-w-sm">
+          Đăng nhập để tiếp tục nhập thông tin giao hàng và tạo đơn hàng.
+        </p>
+        <Link
+          href={getLoginRedirect(checkoutPath)}
+          className="bg-ink hover:bg-gold-dark transition-colors text-paper px-6 py-3 rounded-full text-sm font-medium"
+        >
+          Đăng nhập để tiếp tục
+        </Link>
+      </div>
+    );
+  }
 
   if (orderResult) {
     return (
@@ -264,7 +302,13 @@ const CartPageContent = () => {
           </div>
           {activeStep === 1 && cart.length > 0 && (
             <button
-              onClick={() => router.push("/cart?step=2", { scroll: false })}
+              onClick={() => {
+                if (!authHydrated || !user || !token) {
+                  router.push(getLoginRedirect(checkoutPath));
+                  return;
+                }
+                router.push(checkoutPath, { scroll: false });
+              }}
               className="w-full bg-ink hover:bg-gold-dark transition-colors text-paper p-3 rounded-full cursor-pointer flex items-center justify-center gap-2 text-sm font-medium"
             >
               Tiếp tục
