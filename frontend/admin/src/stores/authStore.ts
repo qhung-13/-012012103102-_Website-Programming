@@ -55,7 +55,7 @@ const useAuthStore = create<AuthStateType & AuthActionsType>()(
       validateSession: async () => {
         const token = get().token;
         if (!token) {
-          set({ user: null, sessionChecked: true });
+          set({ user: null, token: null, sessionChecked: true });
           return false;
         }
         try {
@@ -64,8 +64,14 @@ const useAuthStore = create<AuthStateType & AuthActionsType>()(
             throw new ApiError("Không có quyền quản trị.", 403);
           set({ user: res.data, sessionChecked: true });
           return true;
-        } catch {
-          set({ user: null, token: null, sessionChecked: true });
+        } catch (error) {
+          // Keep the cached session through transient API/network failures;
+          // only an explicit 401/403 means the session is no longer usable.
+          if (error instanceof ApiError && [401, 403].includes(error.status)) {
+            set({ user: null, token: null, sessionChecked: true });
+          } else {
+            set({ sessionChecked: true });
+          }
           return false;
         }
       },
