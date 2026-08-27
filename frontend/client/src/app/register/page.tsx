@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { ArrowRight, Lock, Mail, User } from "lucide-react";
 import useAuthStore, { ApiError } from "@/stores/authStore";
+import { getSafeRedirect } from "@/lib/authRedirect";
 
 const RegisterPage = () => {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -22,7 +23,13 @@ const RegisterPage = () => {
       toast.success(
         "Tạo tài khoản thành công. Chào mừng bạn đến với TRENDLAMA!",
       );
-      router.push("/");
+      const redirect =
+        typeof window === "undefined"
+          ? "/"
+          : getSafeRedirect(
+              new URLSearchParams(window.location.search).get("redirect"),
+            );
+      router.replace(redirect);
     } catch (err) {
       const message =
         err instanceof ApiError
