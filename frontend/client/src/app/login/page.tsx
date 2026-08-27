@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import useAuthStore, { ApiError } from "@/stores/authStore";
+import { getSafeRedirect } from "@/lib/authRedirect";
 
 const LoginPage = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -20,7 +21,13 @@ const LoginPage = () => {
     try {
       await login(form.email, form.password);
       toast.success("Đăng nhập thành công!");
-      router.push("/");
+      const redirect =
+        typeof window === "undefined"
+          ? "/"
+          : getSafeRedirect(
+              new URLSearchParams(window.location.search).get("redirect"),
+            );
+      router.replace(redirect);
     } catch (err) {
       const message =
         err instanceof ApiError
