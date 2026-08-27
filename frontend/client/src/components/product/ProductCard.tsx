@@ -11,6 +11,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { formatColor } from "@/lib/localization";
+import { usePathname, useRouter } from "next/navigation";
+import { getLoginRedirect } from "@/lib/authRedirect";
 
 const colorSwatch: Record<string, string> = {
   gray: "#9ca3af",
@@ -36,11 +38,18 @@ const ProductCard = ({ product }: { product: ProductType }) => {
 
   const { addToCart } = useCartStore();
   const { toggleWishlist, isWishlisted, hasHydrated } = useWishlistStore();
-  const token = useAuthStore((state) => state.token);
+  const { user, token, hasHydrated: authHydrated } = useAuthStore();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const wishlisted = hasHydrated && isWishlisted(product.id);
 
   const handleToggleWishlist = async () => {
+    if (!authHydrated || !user || !token) {
+      toast.info("Vui lòng đăng nhập để lưu sản phẩm yêu thích.");
+      router.push(getLoginRedirect(pathname || "/wishlist"));
+      return;
+    }
     try {
       const added = await toggleWishlist(product, token);
       toast.success(
