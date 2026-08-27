@@ -55,11 +55,13 @@ function getDbConnection(): PDO
         return $pdo;
     }
 
-    $host = env('DB_HOST', '127.0.0.1');
-    $port = env('DB_PORT', '3306');
-    $name = env('DB_NAME', 'trendlama');
-    $user = env('DB_USER', 'root');
-    $pass = env('DB_PASS', '');
+    // Support both the names used by this project and the conventional names
+    // commonly entered in Render/Aiven settings.
+    $host = env('DB_HOST', env('MYSQL_HOST', '127.0.0.1'));
+    $port = env('DB_PORT', env('MYSQL_PORT', '3306'));
+    $name = env('DB_NAME', env('DB_DATABASE', env('MYSQL_DATABASE', 'rozbux')));
+    $user = env('DB_USER', env('DB_USERNAME', env('MYSQL_USER', 'root')));
+    $pass = env('DB_PASS', env('DB_PASSWORD', env('MYSQL_PASSWORD', '')));
 
     $dsn = "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4";
 
@@ -73,17 +75,6 @@ function getDbConnection(): PDO
         $sslCa = trim((string) env('DB_SSL_CA', ''));
 
         if ($sslCa !== '') {
-
-            error_log('DB_SSL_CA = ' . $sslCa);
-            error_log(
-                'CA exists = ' .
-                (is_file($sslCa) ? 'YES' : 'NO')
-            );
-            error_log(
-                'CA readable = ' .
-                (is_readable($sslCa) ? 'YES' : 'NO')
-            );
-
             if (!is_file($sslCa)) {
                 throw new RuntimeException(
                     'SSL CA file not found: ' . $sslCa
@@ -97,9 +88,7 @@ function getDbConnection(): PDO
             }
 
             $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
-
-            // Tạm thời chưa bật verify server cert.
-            // Sau khi kết nối thành công mình sẽ bật lại nếu phù hợp.
+            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
         }
 
         $pdo = new PDO(
