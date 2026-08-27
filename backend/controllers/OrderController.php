@@ -43,7 +43,10 @@ class OrderController
     public static function store(): void
     {
         $pdo = getDbConnection();
-        $current = Auth::user();
+        // Checkout/payment is an authenticated operation. The frontend may
+        // guide anonymous visitors to login, but this backend check is the
+        // actual security boundary.
+        $current = Auth::requireAuth();
         $items = Request::input('items', []);
         $shipping = Request::input('shipping', []);
         if (!is_array($items) || count($items) < 1 || count($items) > 50) {
