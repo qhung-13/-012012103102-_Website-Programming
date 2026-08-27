@@ -1,5 +1,7 @@
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
 const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api"
+  configuredApiUrl ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:8000/api" : "")
 ).replace(/\/$/, "");
 
 export type ApiResponse<T> = {
@@ -30,6 +32,16 @@ export class ApiError extends Error {
   }
 }
 
+function endpoint(path: string): string {
+  if (!API_URL) {
+    throw new ApiError(
+      "Chưa cấu hình NEXT_PUBLIC_API_URL cho môi trường production.",
+      0,
+    );
+  }
+  return `${API_URL}${path}`;
+}
+
 type FetchOptions = Omit<RequestInit, "body"> & {
   body?: unknown;
   token?: string | null;
@@ -41,9 +53,10 @@ export async function apiFetch<T = unknown>(
 ): Promise<ApiResponse<T>> {
   const { body, token, headers, ...rest } = options;
 
+  const url = endpoint(path);
   let res: Response;
   try {
-    res = await fetch(`${API_URL}${path}`, {
+    res = await fetch(url, {
       ...rest,
       headers: {
         ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
@@ -55,6 +68,10 @@ export async function apiFetch<T = unknown>(
     });
   } catch {
     throw new ApiError("Không thể kết nối máy chủ. Vui lòng thử lại sau.", 0);
+  }
+
+  if (res.status === 401 && typeof window !== "undefined") {
+    window.dispatchEvent(new Event("trendlama:auth-expired"));
   }
 
   let json: ApiResponse<T>;
@@ -108,15 +125,20 @@ export async function apiUpload(
     formData.append("colors[]", color ?? "");
   });
 
+  const url = endpoint(`/upload?type=${type}`);
   let res: Response;
   try {
-    res = await fetch(`${API_URL}/upload?type=${type}`, {
+    res = await fetch(url, {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body: formData,
     });
   } catch {
     throw new ApiError("Không thể kết nối máy chủ để tải ảnh.", 0);
+  }
+
+  if (res.status === 401 && typeof window !== "undefined") {
+    window.dispatchEvent(new Event("trendlama:auth-expired"));
   }
 
   let json;
@@ -143,6 +165,7 @@ export function resolveImageUrl(path?: string | null): string {
   if (!path) return "/placeholder.svg";
   if (/^https?:\/\//i.test(path)) return path;
   if (path.startsWith("/products/") || path.startsWith("/users/")) return path;
+  if (!API_URL) return path;
   const origin = API_URL.replace(/\/api\/?$/, "");
   return `${origin}${path}`;
 }
