@@ -12,3 +12,9 @@ RewriteRule ^ index.php [L]
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
 </IfModule>
+
+# Apache may otherwise drop the Bearer header before PHP sees it. Without
+# this, public GET requests work while Admin mutations fail authentication.
+<IfModule mod_setenvif.c>
+  SetEnvIf Authorization "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>
