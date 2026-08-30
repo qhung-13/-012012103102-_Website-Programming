@@ -3,7 +3,7 @@
 
 $router->get('', static function (array $params = []): void {
     Response::success([
-        'service' => 'TRENDLAMA API',
+        'service' => 'Roxbusi API',
         'status' => 'ok',
     ], 'API đang hoạt động.');
 });
@@ -69,3 +69,11 @@ $router->post('/upload', [UploadController::class, 'store']);
 // -------------------- CONTACT / NEWSLETTER --------------------
 $router->post('/contact', [MarketingController::class, 'contact']);
 $router->post('/newsletter', [MarketingController::class, 'subscribe']);
+$router->get('/contact-messages', [MarketingController::class, 'messages']);
+$router->get('/contact-messages/{id}', [MarketingController::class, 'showMessage']);
+$router->put('/contact-messages/{id}', [MarketingController::class, 'updateMessage']);
+$router->delete('/contact-messages/{id}', [MarketingController::class, 'deleteMessage']);
+$router->get('/newsletter-subscribers', [MarketingController::class, 'subscribers']);
+$router->get('/newsletter-subscribers/{id}', [MarketingController::class, 'showSubscriber']);
+$router->put('/newsletter-subscribers/{id}', [MarketingController::class, 'updateSubscriber']);
+$router->delete('/newsletter-subscribers/{id}', [MarketingController::class, 'deleteSubscriber']);
