@@ -45,7 +45,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* TRENDLAMA admin theme — ink + gold, echoing the storefront brand.
+/* Roxbusi admin theme — ink + gold, echoing the storefront brand.
    The sidebar tokens are intentionally identical in light and dark mode
    so the navigation rail stays a constant dark "ink" panel regardless of
    which theme the content area uses. */
