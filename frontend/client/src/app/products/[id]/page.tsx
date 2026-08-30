@@ -22,7 +22,7 @@ export const generateMetadata = async ({
   const product = await getProduct(id);
   if (!product) return {};
   return {
-    title: `${product.name} — TRENDLAMA`,
+    title: `${product.name} — Roxbusi`,
     description: product.description,
   };
 };
@@ -63,7 +63,7 @@ const ProductPage = async ({
       {/* DETAILS */}
       <div className="w-full lg:w-1/2 flex flex-col gap-4">
         <span className="tag-mark text-xs uppercase tracking-[0.2em] text-muted font-mono">
-          Sản phẩm chính hãng TRENDLAMA
+          Sản phẩm chính hãng Roxbusi
         </span>
         <h1 className="font-display text-4xl tracking-wide">{product.name}</h1>
         <p className="text-muted text-sm leading-relaxed">

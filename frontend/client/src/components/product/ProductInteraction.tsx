@@ -7,6 +7,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import { formatColor } from "@/lib/localization";
+import useAuthStore from "@/stores/authStore";
+import { loginRedirect } from "@/lib/authRedirect";
 
 const colorSwatch: Record<string, string> = {
   gray: "#9ca3af",
@@ -39,6 +41,7 @@ const ProductInteraction = ({
   const [quantity, setQuantity] = useState(1);
 
   const { addToCart } = useCartStore();
+  const { token, hasHydrated: authHydrated } = useAuthStore();
 
   const handleTypeChange = (type: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -67,6 +70,11 @@ const ProductInteraction = ({
   };
 
   const handleBuyNow = () => {
+    if (!authHydrated || !token) {
+      toast.info("Vui lòng đăng nhập trước khi thanh toán.");
+      router.push(loginRedirect(`/products/${product.slug ?? product.id}`));
+      return;
+    }
     handleAddToCart();
     router.push("/cart?step=2");
   };

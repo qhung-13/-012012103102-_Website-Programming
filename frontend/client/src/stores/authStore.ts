@@ -71,22 +71,20 @@ const useAuthStore = create<AuthStateType & AuthActionsType>()(
 
       validateSession: async () => {
         const token = get().token;
-        if (!token) {
-          set({ user: null, token: null });
-          return false;
-        }
+        if (!token) return false;
         try {
           const res = await apiFetch<AuthUserType>("/auth/me", { token });
           set({ user: res.data });
           return true;
         } catch (error) {
-          // A transient API/network failure must not log a user out. Only an
-          // explicit authentication/authorization failure invalidates the
-          // persisted session.
-          if (error instanceof ApiError && [401, 403].includes(error.status)) {
+          if (
+            error instanceof ApiError &&
+            [401, 403, 404].includes(error.status)
+          ) {
             set({ user: null, token: null });
+            return false;
           }
-          return false;
+          return Boolean(get().user);
         }
       },
     }),

@@ -10,6 +10,7 @@ import {
   Tags,
   CreditCard,
   FileText,
+  Megaphone,
 } from "lucide-react";
 import {
   Sidebar,
@@ -60,15 +61,10 @@ const AppSidebar = () => {
             <SidebarMenuButton asChild className="hover:bg-sidebar-accent">
               <Link href="/" className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-full bg-gold flex items-center justify-center shrink-0">
-                  <Image
-                    src="/logo.svg"
-                    alt="TrendLama"
-                    width={18}
-                    height={18}
-                  />
+                  <Image src="/logo.svg" alt="Roxbusi" width={18} height={18} />
                 </div>
                 <span className="font-semibold tracking-wide">
-                  TRENDLAMA
+                  Roxbusi
                   <span className="ml-1.5 text-[10px] font-normal text-sidebar-foreground/50 align-middle">
                     ADMIN
                   </span>
@@ -158,6 +154,16 @@ const AppSidebar = () => {
                 >
                   <Link href="/blog">
                     <FileText /> Bài viết
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith("/marketing")}
+                >
+                  <Link href="/marketing">
+                    <Megaphone /> Liên hệ & nhận tin
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

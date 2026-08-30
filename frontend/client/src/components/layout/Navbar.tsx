@@ -41,16 +41,6 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    const handleAuthExpired = () => {
-      logout();
-      clearWishlist();
-    };
-    window.addEventListener("trendlama:auth-expired", handleAuthExpired);
-    return () =>
-      window.removeEventListener("trendlama:auth-expired", handleAuthExpired);
-  }, [clearWishlist, logout]);
-
-  useEffect(() => {
     if (!authHydrated || !token) return;
     validateSession().then((valid) => {
       if (valid) syncWishlist(token).catch(() => undefined);
@@ -72,13 +62,13 @@ const Navbar = () => {
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <Image
             src="/logo.png"
-            alt="TrendLama"
+            alt="Roxbusi"
             width={36}
             height={36}
             className="w-7 h-7 md:w-9 md:h-9"
           />
           <p className="font-display text-2xl tracking-wide leading-none pt-1">
-            TRENDLAMA
+            Roxbusi
           </p>
         </Link>
         {/* RIGHT */}

@@ -12,7 +12,7 @@ const linkGroups = [
     ],
   },
   {
-    title: "TRENDLAMA",
+    title: "Roxbusi",
     links: [
       { label: "Giới thiệu", href: "/about" },
       { label: "Liên hệ", href: "/contact" },
@@ -36,9 +36,9 @@ const Footer = () => {
         {/* BRAND */}
         <div className="flex flex-col gap-4 max-w-xs">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.png" alt="TrendLama" width={32} height={32} />
+            <Image src="/logo.png" alt="Roxbusi" width={32} height={32} />
             <p className="font-display text-xl tracking-wide text-paper">
-              TRENDLAMA
+              Roxbusi
             </p>
           </Link>
           <p className="text-sm leading-relaxed">
@@ -46,7 +46,7 @@ const Footer = () => {
             xuất theo lô nhỏ và giao hàng tận nơi.
           </p>
           <span className="tag-mark text-xs text-paper/50">
-            © 2026 TRENDLAMA. Bảo lưu mọi quyền.
+            © 2026 Roxbusi. Bảo lưu mọi quyền.
           </span>
         </div>
 

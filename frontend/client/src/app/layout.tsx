@@ -22,9 +22,9 @@ const bebasNeue = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  title: "TRENDLAMA — Thời trang cho mỗi ngày",
+  title: "Roxbusi — Thời trang cho mỗi ngày",
   description:
-    "Khám phá thời trang hiện đại, thoải mái và bền vững tại TRENDLAMA.",
+    "Khám phá thời trang hiện đại, thoải mái và bền vững tại Roxbusi.",
 };
 
 export default function RootLayout({

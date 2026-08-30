@@ -3,8 +3,8 @@ import Testimonials from "@/components/home/Testimonials";
 import Image from "next/image";
 
 export const metadata = {
-  title: "Giới thiệu — ROZBUX",
-  description: "Câu chuyện và giá trị phía sau ROZBUX.",
+  title: "Giới thiệu — Roxbusi",
+  description: "Câu chuyện và giá trị phía sau Roxbusi.",
 };
 
 const values = [
@@ -37,16 +37,16 @@ const AboutPage = () => {
             MỖI NGÀY THẬT.
           </h1>
           <p className="text-muted text-sm leading-relaxed max-w-md">
-            TRENDLAMA bắt đầu năm 2021 từ một xưởng thời trang đường phố nhỏ.
-            Hôm nay, chúng tôi đã phát triển thành một tủ đồ hoàn chỉnh nhưng
-            mục tiêu vẫn như ngày đầu: tạo ra sản phẩm dễ mặc nhiều lần, giá hợp
-            lý và thật sự bền.
+            Roxbusi bắt đầu năm 2021 từ một xưởng thời trang đường phố nhỏ. Hôm
+            nay, chúng tôi đã phát triển thành một tủ đồ hoàn chỉnh nhưng mục
+            tiêu vẫn như ngày đầu: tạo ra sản phẩm dễ mặc nhiều lần, giá hợp lý
+            và thật sự bền.
           </p>
         </div>
         <div className="md:col-span-6 relative aspect-[4/3] rounded-3xl overflow-hidden bg-paper-dim">
           <Image
             src="/featured.png"
-            alt="Xưởng thiết kế ROZBUX"
+            alt="Xưởng thiết kế Roxbusi"
             fill
             className="object-cover"
           />

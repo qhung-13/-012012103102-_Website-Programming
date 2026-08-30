@@ -42,7 +42,7 @@ const Homepage = async ({
         <div className="md:col-span-7 relative aspect-[4/3] sm:aspect-[3/2] order-1 md:order-2 rounded-3xl overflow-hidden bg-paper-dim">
           <Image
             src="/featured.png"
-            alt="Sản phẩm nổi bật của TRENDLAMA"
+            alt="Sản phẩm nổi bật của Roxbusi"
             fill
             priority
             className="object-cover"

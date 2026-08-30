@@ -1,14 +1,13 @@
-/**
- * Only allow internal application paths as post-login destinations.
- * This prevents a redirect query parameter from becoming an open redirect.
- */
-export function getSafeRedirect(value: string | null | undefined): string {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/";
-  }
-  return value;
-}
+const isSafeInternalPath = (value: string) =>
+  value.startsWith("/") && !value.startsWith("//");
 
-export function getLoginRedirect(path: string): string {
-  return `/login?redirect=${encodeURIComponent(path)}`;
-}
+export const safeRedirect = (
+  value: string | null | undefined,
+  fallback = "/",
+) => {
+  if (!value || !isSafeInternalPath(value)) return fallback;
+  return value;
+};
+
+export const loginRedirect = (path: string) =>
+  `/login?redirect=${encodeURIComponent(safeRedirect(path))}`;

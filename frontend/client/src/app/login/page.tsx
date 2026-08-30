@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import useAuthStore, { ApiError } from "@/stores/authStore";
-import { getSafeRedirect } from "@/lib/authRedirect";
+import { safeRedirect } from "@/lib/authRedirect";
 
 const LoginPage = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -21,13 +21,11 @@ const LoginPage = () => {
     try {
       await login(form.email, form.password);
       toast.success("Đăng nhập thành công!");
-      const redirect =
-        typeof window === "undefined"
-          ? "/"
-          : getSafeRedirect(
-              new URLSearchParams(window.location.search).get("redirect"),
-            );
-      router.replace(redirect);
+      const requestedRedirect =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("redirect")
+          : null;
+      router.push(safeRedirect(requestedRedirect));
     } catch (err) {
       const message =
         err instanceof ApiError
@@ -44,8 +42,8 @@ const LoginPage = () => {
       {/* BRAND PANEL */}
       <div className="hidden lg:flex relative bg-ink text-paper flex-col justify-between p-10">
         <Link href="/" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="TrendLama" width={32} height={32} />
-          <p className="font-display text-xl tracking-wide">TRENDLAMA</p>
+          <Image src="/logo.png" alt="Roxbusi" width={32} height={32} />
+          <p className="font-display text-xl tracking-wide">Roxbusi</p>
         </Link>
         <div>
           <span className="tag-mark text-xs uppercase tracking-[0.2em] text-gold font-mono">

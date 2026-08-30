@@ -22,19 +22,8 @@ const AdminShell = ({
 }) => {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, hasHydrated, sessionChecked, validateSession, logout } =
-    useAuthStore();
+  const { user, hasHydrated, sessionChecked, validateSession } = useAuthStore();
   const isLoginPage = pathname === "/login";
-
-  useEffect(() => {
-    const handleAuthExpired = () => {
-      logout();
-      if (!isLoginPage) router.replace("/login");
-    };
-    window.addEventListener("trendlama:auth-expired", handleAuthExpired);
-    return () =>
-      window.removeEventListener("trendlama:auth-expired", handleAuthExpired);
-  }, [isLoginPage, logout, router]);
 
   useEffect(() => {
     if (!hasHydrated) return;

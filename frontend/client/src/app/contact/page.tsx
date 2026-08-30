@@ -9,7 +9,7 @@ const contactInfo = [
   {
     icon: <Mail className="w-4 h-4" />,
     title: "Email",
-    value: "support@trendlama.com",
+    value: "support@roxbusi.com",
   },
   {
     icon: <Phone className="w-4 h-4" />,
@@ -59,7 +59,7 @@ const ContactPage = () => {
           Liên hệ với chúng tôi
         </span>
         <h1 className="font-display text-4xl sm:text-5xl tracking-wide mt-1">
-          TRENDLAMA luôn sẵn sàng lắng nghe
+          Roxbusi luôn sẵn sàng lắng nghe
         </h1>
         <p className="text-muted text-sm max-w-md mx-auto mt-3">
           Bạn cần hỗ trợ đơn hàng, kích cỡ hoặc muốn hợp tác? Hãy gửi lời nhắn,
@@ -166,7 +166,7 @@ const ContactPage = () => {
               rows={5}
               minLength={10}
               maxLength={5000}
-              placeholder="TRENDLAMA có thể hỗ trợ bạn điều gì?"
+              placeholder="Roxbusi có thể hỗ trợ bạn điều gì?"
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
               className="border border-line rounded-xl px-3 py-2.5 text-sm outline-none focus:border-gold-dark transition-colors resize-none"

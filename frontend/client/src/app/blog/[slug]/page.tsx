@@ -36,7 +36,7 @@ export const generateMetadata = async ({
   const post = await getPost(slug);
   if (!post) return {};
   return {
-    title: `${post.title} — Góc TRENDLAMA`,
+    title: `${post.title} — Góc Roxbusi`,
     description: post.excerpt,
   };
 };

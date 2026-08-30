@@ -4,9 +4,9 @@ import { ApiBlogPostType, mapApiBlogPost } from "@/data/blogPosts";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Bài viết — RUZBOX",
+  title: "Bài viết — Roxbusi",
   description:
-    "Cẩm nang phong cách, bí quyết bảo quản và câu chuyện từ RUZBOX.",
+    "Cẩm nang phong cách, bí quyết bảo quản và câu chuyện từ Roxbusi.",
 };
 
 const BlogPage = async ({
@@ -34,7 +34,7 @@ const BlogPage = async ({
     <div className="mt-8 mb-16">
       <div className="mb-8 text-center">
         <span className="tag-mark text-xs uppercase tracking-[0.2em] text-muted font-mono justify-center">
-          Góc RUZBOX
+          Góc Roxbusi
         </span>
         <h1 className="font-display text-4xl sm:text-5xl tracking-wide mt-1">
           Câu chuyện & Cẩm nang phong cách

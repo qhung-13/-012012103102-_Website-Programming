@@ -2,10 +2,10 @@
 
 import ProductCard from "@/components/product/ProductCard";
 import useWishlistStore from "@/stores/wishlistStore";
+import useAuthStore from "@/stores/authStore";
 import { Heart } from "lucide-react";
 import Link from "next/link";
-import useAuthStore from "@/stores/authStore";
-import { getLoginRedirect } from "@/lib/authRedirect";
+import { loginRedirect } from "@/lib/authRedirect";
 
 const WishlistPage = () => {
   const { wishlist, hasHydrated } = useWishlistStore();
@@ -18,10 +18,10 @@ const WishlistPage = () => {
       <div className="mt-16 mb-16 flex flex-col items-center gap-3 text-center">
         <Heart className="w-8 h-8 text-muted" />
         <p className="text-sm text-muted">
-          Đăng nhập để sử dụng danh sách yêu thích.
+          Đăng nhập để lưu và xem sản phẩm yêu thích.
         </p>
         <Link
-          href={getLoginRedirect("/wishlist")}
+          href={loginRedirect("/wishlist")}
           className="text-sm font-medium underline hover:text-gold-dark"
         >
           Đăng nhập

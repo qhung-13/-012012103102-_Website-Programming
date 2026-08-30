@@ -23,7 +23,7 @@ const PaymentForm = ({
       onSubmit={handleSubmit(handlePaymentForm)}
     >
       <p className="text-sm text-muted">
-        Chọn cách thanh toán. TRENDLAMA không thu thập thông tin thẻ trên trang
+        Chọn cách thanh toán. Roxbusi không thu thập thông tin thẻ trên trang
         này.
       </p>
       <label className="flex items-start gap-3 rounded-2xl border border-line p-4 cursor-pointer has-[:checked]:border-ink">

@@ -20,7 +20,7 @@ const BlogPreview = async () => {
       <div className="flex items-end justify-between mb-6">
         <div>
           <span className="tag-mark text-xs uppercase tracking-[0.2em] text-muted font-mono">
-            Từ góc TRENDLAMA
+            Từ góc Roxbusi
           </span>
           <h2 className="font-display text-3xl tracking-wide mt-1">
             Bài viết mới nhất

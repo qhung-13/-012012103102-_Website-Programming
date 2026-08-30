@@ -55,7 +55,7 @@ const useAuthStore = create<AuthStateType & AuthActionsType>()(
       validateSession: async () => {
         const token = get().token;
         if (!token) {
-          set({ user: null, token: null, sessionChecked: true });
+          set({ user: null, sessionChecked: true });
           return false;
         }
         try {
@@ -65,14 +65,17 @@ const useAuthStore = create<AuthStateType & AuthActionsType>()(
           set({ user: res.data, sessionChecked: true });
           return true;
         } catch (error) {
-          // Keep the cached session through transient API/network failures;
-          // only an explicit 401/403 means the session is no longer usable.
-          if (error instanceof ApiError && [401, 403].includes(error.status)) {
+          // A temporary 5xx/network failure must not destroy a valid local
+          // session. Only authentication/authorization failures invalidate it.
+          if (
+            error instanceof ApiError &&
+            [401, 403, 404].includes(error.status)
+          ) {
             set({ user: null, token: null, sessionChecked: true });
-          } else {
-            set({ sessionChecked: true });
+            return false;
           }
-          return false;
+          set({ sessionChecked: true });
+          return Boolean(get().user);
         }
       },
     }),
