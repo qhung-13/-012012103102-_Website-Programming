@@ -89,7 +89,7 @@ const AddUser = ({ onCreated }: { onCreated?: () => void }) => {
       toast.success("Đã tạo người dùng.");
       form.reset();
       onCreated?.();
-      window.dispatchEvent(new Event("trendlama:users-changed"));
+      window.dispatchEvent(new Event("roxbusi:users-changed"));
       closeRef.current?.click();
     } catch (err) {
       toast.error(
