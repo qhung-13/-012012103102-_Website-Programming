@@ -47,6 +47,19 @@ function env(string $key, $default = null)
     return $value === false ? $default : $value;
 }
 
+/** Read the first configured value so common hosting-provider aliases work. */
+function envFirst(array $keys, $default = null)
+{
+    foreach ($keys as $key) {
+        $value = getenv($key);
+        if ($value !== false && trim((string) $value) !== '') {
+            return $value;
+        }
+    }
+
+    return $default;
+}
+
 function getDbConnection(): PDO
 {
     static $pdo = null;
@@ -55,13 +68,13 @@ function getDbConnection(): PDO
         return $pdo;
     }
 
-    // Support both the names used by this project and the conventional names
-    // commonly entered in Render/Aiven settings.
-    $host = env('DB_HOST', env('MYSQL_HOST', '127.0.0.1'));
-    $port = env('DB_PORT', env('MYSQL_PORT', '3306'));
-    $name = env('DB_NAME', env('DB_DATABASE', env('MYSQL_DATABASE', 'rozbux')));
-    $user = env('DB_USER', env('DB_USERNAME', env('MYSQL_USER', 'root')));
-    $pass = env('DB_PASS', env('DB_PASSWORD', env('MYSQL_PASSWORD', '')));
+    // Support both the names used in the local .env and the names exposed by
+    // Render/Aiven-style managed database integrations.
+    $host = envFirst(['DB_HOST', 'MYSQL_HOST'], '127.0.0.1');
+    $port = envFirst(['DB_PORT', 'MYSQL_PORT'], '3306');
+    $name = envFirst(['DB_NAME', 'DB_DATABASE', 'MYSQL_DATABASE'], 'rozbux');
+    $user = envFirst(['DB_USER', 'DB_USERNAME', 'MYSQL_USER'], 'root');
+    $pass = envFirst(['DB_PASS', 'DB_PASSWORD', 'MYSQL_PASSWORD'], '');
 
     $dsn = "mysql:host={$host};port={$port};dbname={$name};charset=utf8mb4";
 
@@ -72,9 +85,19 @@ function getDbConnection(): PDO
             PDO::ATTR_EMULATE_PREPARES => false,
         ];
 
-        $sslCa = trim((string) env('DB_SSL_CA', ''));
+        $sslCa = trim((string) envFirst([
+            'DB_SSL_CA',
+            'MYSQL_SSL_CA',
+            'DB_SSL_CA_PATH',
+            'DV_SSL_CA',
+        ], ''));
 
         if ($sslCa !== '') {
+            if (!is_file($sslCa)) {
+                $relativeCa = __DIR__ . '/../' . ltrim($sslCa, '/\\');
+                if (is_file($relativeCa)) $sslCa = $relativeCa;
+            }
+
             if (!is_file($sslCa)) {
                 throw new RuntimeException(
                     'SSL CA file not found: ' . $sslCa
@@ -88,7 +111,13 @@ function getDbConnection(): PDO
             }
 
             $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
-            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+
+            if (
+                filter_var(env('DB_SSL_VERIFY', 'false'), FILTER_VALIDATE_BOOL)
+                && defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')
+            ) {
+                $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+            }
         }
 
         $pdo = new PDO(
