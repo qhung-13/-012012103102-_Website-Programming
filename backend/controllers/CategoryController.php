@@ -6,11 +6,11 @@ class CategoryController
     {
         $pdo = getDbConnection();
         $categories = $pdo->query(
-            'SELECT c.*, COUNT(p.id) AS product_count
+            "SELECT c.*, COUNT(p.id) AS product_count
              FROM categories c
-             LEFT JOIN products p ON p.category_id = c.id AND p.status = "active"
-             GROUP BY c.id
-             ORDER BY c.name ASC'
+             LEFT JOIN products p ON p.category_id = c.id AND p.status = 'active'
+             GROUP BY c.id, c.name, c.slug, c.created_at
+             ORDER BY c.name ASC"
         )->fetchAll();
 
         Response::success($categories);
