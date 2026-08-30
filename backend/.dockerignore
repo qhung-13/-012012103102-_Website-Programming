@@ -1,6 +1,9 @@
 .git
 .gitignore
 .env
+.env.*
+!.env.example
+*.pem
 README.md
 database/*.log
 uploads/products/*
