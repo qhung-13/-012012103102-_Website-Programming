@@ -27,7 +27,16 @@ class UploadController
         }
 
         $configuredRoot = trim((string) env('UPLOAD_DIR', ''));
-        $uploadRoot = rtrim($configuredRoot !== '' ? $configuredRoot : __DIR__ . '/../uploads', '/\\');
+        if ($configuredRoot === '') {
+            $uploadRoot = __DIR__ . '/../uploads';
+        } elseif (preg_match('#^(?:[A-Za-z]:[\\\\/]|[\\\\/])#', $configuredRoot)) {
+            $uploadRoot = $configuredRoot;
+        } else {
+            // Resolve relative paths from the backend directory, not from
+            // Apache's current working directory.
+            $uploadRoot = __DIR__ . '/../' . $configuredRoot;
+        }
+        $uploadRoot = rtrim($uploadRoot, '/\\');
         $targetDir = $uploadRoot . DIRECTORY_SEPARATOR . $type;
         if (!is_dir($targetDir)) {
             if (!mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
