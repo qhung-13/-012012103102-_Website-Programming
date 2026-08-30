@@ -34,10 +34,10 @@ const AdminLoginPage = () => {
       <div className="w-full max-w-sm bg-card border rounded-2xl p-8 flex flex-col gap-6">
         <div className="flex flex-col items-center gap-2 text-center">
           <div className="w-10 h-10 rounded-full bg-gold flex items-center justify-center">
-            <Image src="/logo.svg" alt="TrendLama" width={22} height={22} />
+            <Image src="/logo.svg" alt="Roxbusi" width={22} height={22} />
           </div>
           <h1 className="text-lg font-semibold tracking-tight">
-            Quản trị TRENDLAMA
+            Quản trị Roxbusi
           </h1>
           <p className="text-sm text-muted-foreground">
             Đăng nhập để quản lý cửa hàng
@@ -59,7 +59,7 @@ const AdminLoginPage = () => {
                 type="email"
                 required
                 maxLength={150}
-                placeholder="admin@trendlama.com"
+                placeholder="admin@roxbusi.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 className="text-sm outline-none w-full bg-transparent"
