@@ -43,9 +43,8 @@ class OrderController
     public static function store(): void
     {
         $pdo = getDbConnection();
-        // Checkout/payment is an authenticated operation. The frontend may
-        // guide anonymous visitors to login, but this backend check is the
-        // actual security boundary.
+        // Checkout is an authenticated user action. Admin-created orders also
+        // pass through this guard because the Admin UI sends its Bearer token.
         $current = Auth::requireAuth();
         $items = Request::input('items', []);
         $shipping = Request::input('shipping', []);
@@ -109,8 +108,8 @@ class OrderController
             $discount = round($subtotal * 0.1, 2);
             $total = round($subtotal + $shippingFee - $discount, 2);
             $stmt = $pdo->prepare(
-                'INSERT INTO orders (user_id, status, subtotal, shipping_fee, discount, total, shipping_name, shipping_email, shipping_phone, shipping_address, payment_method)
-                 VALUES (?, "pending", ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                "INSERT INTO orders (user_id, status, subtotal, shipping_fee, discount, total, shipping_name, shipping_email, shipping_phone, shipping_address, payment_method)
+                 VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?)"
             );
             $stmt->execute([$current['sub'] ?? null, $subtotal, $shippingFee, $discount, $total, $shipping['name'], $shipping['email'], $shipping['phone'], $shipping['address'], $paymentMethod]);
             $orderId = (int) $pdo->lastInsertId();
