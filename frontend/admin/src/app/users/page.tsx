@@ -50,8 +50,8 @@ const UsersPage = () => {
   }, [load]);
 
   useEffect(() => {
-    window.addEventListener("trendlama:users-changed", load);
-    return () => window.removeEventListener("trendlama:users-changed", load);
+    window.addEventListener("roxbusi:users-changed", load);
+    return () => window.removeEventListener("roxbusi:users-changed", load);
   }, [load]);
 
   const handleDelete = async (user: User) => {
