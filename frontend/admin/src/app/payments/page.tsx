@@ -57,8 +57,8 @@ const PaymentsPage = () => {
   }, [load]);
 
   useEffect(() => {
-    window.addEventListener("trendlama:orders-changed", load);
-    return () => window.removeEventListener("trendlama:orders-changed", load);
+    window.addEventListener("roxbusi:orders-changed", load);
+    return () => window.removeEventListener("roxbusi:orders-changed", load);
   }, [load]);
 
   const handleStatusChange = async (
