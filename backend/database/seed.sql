@@ -1,5 +1,5 @@
 -- =========================================================
--- TRENDLAMA — Dữ liệu mẫu (chạy sau schema.sql)
+-- Roxbusi — Dữ liệu mẫu (chạy sau schema.sql)
 -- Không chứa mật khẩu hoặc tài khoản mặc định.
 -- Tạo quản trị viên bằng: php database/create_admin.php
 -- =========================================================
