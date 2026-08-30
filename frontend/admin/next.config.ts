@@ -1,30 +1,24 @@
 import type { NextConfig } from "next";
 
-function apiImagePattern() {
-  const configuredUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-  if (!configuredUrl) return null;
-
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+const apiImagePattern = (() => {
   try {
-    const url = new URL(configuredUrl);
+    const parsed = new URL(apiUrl);
     return {
-      protocol: url.protocol === "https:" ? "https" : "http",
-      hostname: url.hostname,
-      ...(url.port ? { port: url.port } : {}),
-      pathname: "/**",
-    } as const;
+      protocol: parsed.protocol.replace(":", "") as "http" | "https",
+      hostname: parsed.hostname,
+      ...(parsed.port ? { port: parsed.port } : {}),
+    };
   } catch {
     return null;
   }
-}
-
-const apiPattern = apiImagePattern();
+})();
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
     remotePatterns: [
-      ...(apiPattern ? [apiPattern] : []),
       { protocol: "https", hostname: "images.pexels.com" },
+      ...(apiImagePattern ? [apiImagePattern] : []),
     ],
   },
 };
