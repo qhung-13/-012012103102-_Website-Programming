@@ -182,7 +182,7 @@ const AddProduct = ({ onCreated }: { onCreated?: () => void }) => {
       form.reset();
       setFiles({});
       onCreated?.();
-      window.dispatchEvent(new Event("trendlama:products-changed"));
+      window.dispatchEvent(new Event("roxbusi:products-changed"));
       closeRef.current?.click();
     } catch (err) {
       toast.error(
