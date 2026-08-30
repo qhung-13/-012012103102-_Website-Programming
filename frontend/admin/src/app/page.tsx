@@ -47,9 +47,9 @@ const Homepage = () => {
 
   useEffect(() => {
     const events = [
-      "trendlama:products-changed",
-      "trendlama:users-changed",
-      "trendlama:orders-changed",
+      "roxbusi:products-changed",
+      "roxbusi:users-changed",
+      "roxbusi:orders-changed",
     ];
     events.forEach((event) => window.addEventListener(event, load));
     return () =>
