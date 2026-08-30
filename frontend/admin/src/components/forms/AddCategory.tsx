@@ -52,7 +52,7 @@ const AddCategory = ({ onCreated }: { onCreated?: () => void }) => {
       toast.success("Đã tạo danh mục.");
       form.reset();
       onCreated?.();
-      window.dispatchEvent(new Event("trendlama:categories-changed"));
+      window.dispatchEvent(new Event("roxbusi:categories-changed"));
       closeRef.current?.click();
     } catch (err) {
       toast.error(
