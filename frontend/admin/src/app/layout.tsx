@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TRENDLAMA Admin",
-  description: "Manage products, orders, users and payments for TRENDLAMA.",
+  title: "Roxbusi Admin",
+  description: "Manage products, orders, users and payments for Roxbusi.",
 };
 
 export default async function RootLayout({
