@@ -58,12 +58,11 @@ class Request
             ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
             ?? '';
 
-        // Some Apache/FastCGI configurations expose Authorization only via
-        // getallheaders(). This fallback prevents a valid browser Bearer
-        // token from becoming an apparent anonymous request on Render.
+        // Some Apache/FastCGI setups expose Authorization only through the
+        // headers array, even when SetEnvIf is enabled.
         if ($header === '' && function_exists('getallheaders')) {
             foreach (getallheaders() as $name => $value) {
-                if (strcasecmp($name, 'Authorization') === 0) {
+                if (strcasecmp((string) $name, 'Authorization') === 0) {
                     $header = (string) $value;
                     break;
                 }
