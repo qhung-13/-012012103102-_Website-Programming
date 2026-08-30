@@ -136,7 +136,7 @@ const AddOrder = ({ onCreated }: { onCreated?: () => void }) => {
       toast.success("Đã tạo đơn hàng.");
       form.reset();
       onCreated?.();
-      window.dispatchEvent(new Event("trendlama:orders-changed"));
+      window.dispatchEvent(new Event("roxbusi:orders-changed"));
       closeRef.current?.click();
     } catch (error) {
       toast.error(
