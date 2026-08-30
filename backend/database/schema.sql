@@ -1,5 +1,5 @@
 -- =========================================================
--- ROZBUX — Database Schema
+-- Roxbusi — Database Schema
 -- Run this once to create the database and all tables.
 -- =========================================================
 
