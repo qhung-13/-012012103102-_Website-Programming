@@ -65,8 +65,8 @@ const ProductsPage = () => {
   }, [load]);
 
   useEffect(() => {
-    window.addEventListener("trendlama:products-changed", load);
-    return () => window.removeEventListener("trendlama:products-changed", load);
+    window.addEventListener("roxbusi:products-changed", load);
+    return () => window.removeEventListener("roxbusi:products-changed", load);
   }, [load]);
 
   const handleDelete = async (product: Product) => {
