@@ -7,6 +7,7 @@ export type AdminUserType = {
   name: string;
   email: string;
   role: "admin" | "customer";
+  avatar?: string | null;
 };
 
 type AuthStateType = {
