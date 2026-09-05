@@ -192,7 +192,14 @@ const CartPageContent = () => {
                     {/* IMAGE */}
                     <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-paper-dim rounded-2xl overflow-hidden shrink-0">
                       <Image
-                        src={resolveImageUrl(item.images[item.selectedColor])}
+                        src={resolveImageUrl(
+                          item.images[item.selectedColor] ??
+                            (item.imageGallery ?? []).find(
+                              (image) => image.color === item.selectedColor,
+                            )?.path ??
+                            (item.imageGallery ?? [])[0]?.path ??
+                            Object.values(item.images)[0],
+                        )}
                         alt={item.name}
                         fill
                         className="object-contain p-2"
