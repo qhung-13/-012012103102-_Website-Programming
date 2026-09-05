@@ -6,6 +6,8 @@
 
 class ProductController
 {
+    private const MAX_IMAGES = 20;
+
     /** GET /api/products — public, paginated, filterable */
     public static function index(): void
     {
@@ -17,8 +19,9 @@ class ProductController
         $offset = ($page - 1) * $limit;
 
         $category = Request::query('category');
-        $search = Request::query('search');
+        $search = trim((string) Request::query('search', ''));
         $sort = Request::query('sort', 'newest');
+        $status = Request::query('status');
 
         $where = $adminView ? [] : ["p.status = 'active'"];
         $params = [];
@@ -27,9 +30,15 @@ class ProductController
             $where[] = 'c.slug = ?';
             $params[] = $category;
         }
-        if ($search) {
-            $where[] = 'p.name LIKE ?';
-            $params[] = '%' . $search . '%';
+        if ($search !== '') {
+            $search = substr($search, 0, 100);
+            $where[] = '(p.name LIKE ? OR c.name LIKE ? OR CAST(p.id AS CHAR) LIKE ?)';
+            $needle = '%' . $search . '%';
+            array_push($params, $needle, $needle, $needle);
+        }
+        if ($adminView && in_array($status, ['active', 'draft'], true)) {
+            $where[] = 'p.status = ?';
+            $params[] = $status;
         }
 
         $orderBy = match ($sort) {
@@ -102,25 +111,34 @@ class ProductController
 
         $slug = self::uniqueSlug($data['name']);
 
-        $stmt = $pdo->prepare(
-            'INSERT INTO products (category_id, name, slug, short_description, description, price, stock, sizes, colors, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([
-            $data['category_id'],
-            $data['name'],
-            $slug,
-            $data['short_description'],
-            $data['description'],
-            $data['price'],
-            $data['stock'],
-            json_encode($data['sizes']),
-            json_encode($data['colors']),
-            $data['status'],
-        ]);
+        $images = self::validateImages(Request::input('images', []), $data['colors']);
 
-        $id = (int) $pdo->lastInsertId();
-        self::saveImages($id, Request::input('images', []));
+        $pdo->beginTransaction();
+        try {
+            $stmt = $pdo->prepare(
+                'INSERT INTO products (category_id, name, slug, short_description, description, price, stock, sizes, colors, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([
+                $data['category_id'],
+                $data['name'],
+                $slug,
+                $data['short_description'],
+                $data['description'],
+                $data['price'],
+                $data['stock'],
+                json_encode($data['sizes']),
+                json_encode($data['colors']),
+                $data['status'],
+            ]);
+
+            $id = (int) $pdo->lastInsertId();
+            self::saveImages($id, $images);
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
 
         self::show(['id' => $id]);
     }
@@ -133,6 +151,15 @@ class ProductController
         $id = (int) $params['id'];
 
         $data = self::validate(partial: true);
+        $newImagesInput = Request::input('add_images');
+        // Older admin clients used "images" on update. Treat those entries as
+        // additions instead of destructively replacing the whole gallery.
+        if ($newImagesInput === null && Request::input('images') !== null) {
+            $newImagesInput = Request::input('images');
+        }
+        $availableColors = $data['colors'] ?? self::productColors($id);
+        $newImages = self::validateImages($newImagesInput ?? [], $availableColors);
+        $removeImageIds = self::validateImageIds(Request::input('remove_image_ids', []));
 
         $fields = [];
         $values = [];
@@ -155,16 +182,67 @@ class ProductController
             $values[] = self::uniqueSlug($data['name'], $id);
         }
 
-        if ($fields) {
-            $values[] = $id;
-            $stmt = $pdo->prepare('UPDATE products SET ' . implode(', ', $fields) . ' WHERE id = ?');
-            $stmt->execute($values);
+        $pathsToDelete = [];
+        $pdo->beginTransaction();
+        try {
+            $exists = $pdo->prepare('SELECT id FROM products WHERE id = ? FOR UPDATE');
+            $exists->execute([$id]);
+            if (!$exists->fetch()) {
+                $pdo->rollBack();
+                Response::error('Không tìm thấy sản phẩm.', 404);
+            }
+
+            if ($fields) {
+                $values[] = $id;
+                $stmt = $pdo->prepare('UPDATE products SET ' . implode(', ', $fields) . ' WHERE id = ?');
+                $stmt->execute($values);
+            }
+
+            if ($removeImageIds) {
+                $placeholders = implode(',', array_fill(0, count($removeImageIds), '?'));
+                $imageParams = array_merge([$id], $removeImageIds);
+                $imageStmt = $pdo->prepare(
+                    "SELECT image_path FROM product_images WHERE product_id = ? AND id IN ($placeholders)"
+                );
+                $imageStmt->execute($imageParams);
+                $pathsToDelete = array_column($imageStmt->fetchAll(), 'image_path');
+                if (count($pathsToDelete) !== count($removeImageIds)) {
+                    $pdo->rollBack();
+                    Response::error('Có ảnh không thuộc sản phẩm này hoặc đã bị xóa.', 422, [
+                        'remove_image_ids' => 'Vui lòng tải lại dữ liệu sản phẩm rồi thử lại.',
+                    ]);
+                }
+                $pdo->prepare(
+                    "DELETE FROM product_images WHERE product_id = ? AND id IN ($placeholders)"
+                )->execute($imageParams);
+            }
+
+            $currentCountStmt = $pdo->prepare('SELECT COUNT(*) FROM product_images WHERE product_id = ?');
+            $currentCountStmt->execute([$id]);
+            $currentCount = (int) $currentCountStmt->fetchColumn();
+            if ($currentCount + count($newImages) > self::MAX_IMAGES) {
+                $pdo->rollBack();
+                Response::error('Mỗi sản phẩm chỉ được có tối đa ' . self::MAX_IMAGES . ' ảnh.', 422, [
+                    'add_images' => 'Hãy xóa bớt ảnh hoặc chọn ít ảnh mới hơn.',
+                ]);
+            }
+
+            if (array_key_exists('colors', $data)) {
+                self::detachRemovedImageColors($id, $data['colors']);
+            }
+
+            $nextSortStmt = $pdo->prepare(
+                'SELECT COALESCE(MAX(sort_order), -1) + 1 FROM product_images WHERE product_id = ?'
+            );
+            $nextSortStmt->execute([$id]);
+            self::saveImages($id, $newImages, (int) $nextSortStmt->fetchColumn());
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
         }
 
-        if (Request::input('images') !== null) {
-            $pdo->prepare('DELETE FROM product_images WHERE product_id = ?')->execute([$id]);
-            self::saveImages($id, Request::input('images', []));
-        }
+        UploadController::deleteManagedFiles($pathsToDelete);
 
         self::show(['id' => $id]);
     }
@@ -174,11 +252,26 @@ class ProductController
     {
         Auth::requireAdmin();
         $pdo = getDbConnection();
-        $stmt = $pdo->prepare('DELETE FROM products WHERE id = ?');
-        $stmt->execute([(int) $params['id']]);
-        if ($stmt->rowCount() === 0) {
-            Response::error('Không tìm thấy sản phẩm.', 404);
+        $id = (int) $params['id'];
+        $pdo->beginTransaction();
+        try {
+            $imageStmt = $pdo->prepare('SELECT image_path FROM product_images WHERE product_id = ?');
+            $imageStmt->execute([$id]);
+            $pathsToDelete = array_column($imageStmt->fetchAll(), 'image_path');
+
+            $stmt = $pdo->prepare('DELETE FROM products WHERE id = ?');
+            $stmt->execute([$id]);
+            if ($stmt->rowCount() === 0) {
+                $pdo->rollBack();
+                Response::error('Không tìm thấy sản phẩm.', 404);
+            }
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
         }
+
+        UploadController::deleteManagedFiles($pathsToDelete);
         Response::success(null, 'Đã xóa sản phẩm.');
     }
 
@@ -249,6 +342,9 @@ class ProductController
         foreach (['name', 'short_description', 'description', 'status'] as $field) {
             if (array_key_exists($field, $body)) $data[$field] = is_string($body[$field]) ? trim($body[$field]) : $body[$field];
         }
+        if (array_key_exists('description', $data)) {
+            $data['description'] = ContentSanitizer::richText($data['description']);
+        }
         if (array_key_exists('category_id', $body)) {
             $data['category_id'] = $body['category_id'] === null || $body['category_id'] === ''
                 ? null
@@ -273,26 +369,19 @@ class ProductController
         return $data;
     }
 
-    private static function saveImages(int $productId, array $images): void
+    private static function saveImages(int $productId, array $images, int $startOrder = 0): void
     {
         if (!$images) return;
         $pdo = getDbConnection();
         $stmt = $pdo->prepare(
             'INSERT INTO product_images (product_id, color, image_path, sort_order) VALUES (?, ?, ?, ?)'
         );
-        foreach (array_slice(array_values($images), 0, 20) as $i => $image) {
-            if (!is_array($image)) {
-                continue;
-            }
-            $path = trim((string) ($image['path'] ?? $image['image_path'] ?? ''));
-            if (!preg_match('#^/(uploads|products)/[A-Za-z0-9/_-]+\.(jpe?g|png|webp|gif)$#i', $path)) {
-                continue;
-            }
+        foreach (array_values($images) as $i => $image) {
             $stmt->execute([
                 $productId,
-                isset($image['color']) ? substr(trim((string) $image['color']), 0, 50) : null,
-                $path,
-                $i,
+                $image['color'],
+                $image['path'],
+                $startOrder + $i,
             ]);
         }
     }
@@ -301,26 +390,41 @@ class ProductController
     {
         $pdo = getDbConnection();
         $stmt = $pdo->prepare(
-            'SELECT color, image_path FROM product_images WHERE product_id = ? ORDER BY sort_order ASC'
+            'SELECT id, color, image_path, sort_order
+             FROM product_images
+             WHERE product_id = ?
+             ORDER BY sort_order ASC, id ASC'
         );
         $stmt->execute([$product['id']]);
         $product['images_raw'] = $stmt->fetchAll();
         return $product;
     }
 
-    /** Reshapes a DB row into the { images: { color: path } } shape the frontend expects. */
+    /** Keeps the legacy color map while exposing every ordered image for galleries/editing. */
     private static function formatProduct(array $product): array
     {
         $images = [];
+        $gallery = [];
         foreach ($product['images_raw'] ?? [] as $img) {
             $key = $img['color'] ?? 'default';
-            $images[$key] = $img['image_path'];
+            // The old clients expect one representative image per color. Keep
+            // the first one, while image_gallery preserves the complete list.
+            if (!isset($images[$key])) $images[$key] = $img['image_path'];
+            $gallery[] = [
+                'id' => (int) $img['id'],
+                'color' => $img['color'],
+                'image_path' => $img['image_path'],
+                'sort_order' => (int) $img['sort_order'],
+            ];
         }
         unset($product['images_raw']);
 
         $product['sizes'] = json_decode($product['sizes'] ?? '[]', true) ?? [];
         $product['colors'] = json_decode($product['colors'] ?? '[]', true) ?? [];
         $product['images'] = $images;
+        $product['image_gallery'] = $gallery;
+        $product['primary_image'] = $gallery[0]['image_path'] ?? null;
+        $product['description'] = ContentSanitizer::richText($product['description'] ?? '');
         $product['id'] = (int) $product['id'];
         $product['category_id'] = $product['category_id'] !== null ? (int) $product['category_id'] : null;
         $product['price'] = (float) $product['price'];
@@ -343,10 +447,10 @@ class ProductController
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $pdo = getDbConnection();
         $stmt = $pdo->prepare(
-            "SELECT product_id, color, image_path
+            "SELECT id, product_id, color, image_path, sort_order
              FROM product_images
              WHERE product_id IN ($placeholders)
-             ORDER BY sort_order ASC"
+             ORDER BY product_id ASC, sort_order ASC, id ASC"
         );
         $stmt->execute($ids);
 
@@ -369,6 +473,96 @@ class ProductController
             $value
         );
         return array_values(array_slice(array_unique(array_filter($clean)), 0, 30));
+    }
+
+    private static function validateImages($value, array $availableColors = []): array
+    {
+        if (!is_array($value)) {
+            Response::error('Danh sách ảnh không hợp lệ.', 422, ['images' => 'Dữ liệu phải là một danh sách.']);
+        }
+        if (count($value) > self::MAX_IMAGES) {
+            Response::error('Mỗi sản phẩm chỉ được có tối đa ' . self::MAX_IMAGES . ' ảnh.', 422);
+        }
+
+        $configuredBase = trim((string) env('UPLOAD_BASE_URL', ''), '/');
+        $publicBase = '/' . ($configuredBase !== '' ? $configuredBase : 'uploads');
+        $managedPattern = '#^' . preg_quote($publicBase . '/products/', '#')
+            . '[a-f0-9]{32}\.(?:jpe?g|png|webp|gif)$#i';
+        $bundledPattern = '#^/products/[A-Za-z0-9_-]+\.(?:jpe?g|png|webp|gif)$#i';
+        $clean = [];
+
+        foreach (array_values($value) as $index => $image) {
+            if (!is_array($image)) {
+                Response::error('Danh sách ảnh không hợp lệ.', 422, [
+                    'images' => 'Ảnh thứ ' . ($index + 1) . ' không đúng định dạng.',
+                ]);
+            }
+            $path = trim((string) ($image['path'] ?? $image['image_path'] ?? ''));
+            if (!preg_match($managedPattern, $path) && !preg_match($bundledPattern, $path)) {
+                Response::error('Đường dẫn ảnh không hợp lệ.', 422, [
+                    'images' => 'Ảnh thứ ' . ($index + 1) . ' không thuộc vùng ảnh sản phẩm.',
+                ]);
+            }
+
+            $color = isset($image['color']) && is_string($image['color'])
+                ? substr(trim($image['color']), 0, 50)
+                : '';
+            if ($color !== '' && !in_array($color, $availableColors, true)) {
+                Response::error('Màu gắn với ảnh không hợp lệ.', 422, [
+                    'images' => 'Ảnh thứ ' . ($index + 1) . ' đang dùng màu chưa được chọn.',
+                ]);
+            }
+            $clean[] = ['path' => $path, 'color' => $color !== '' ? $color : null];
+        }
+
+        return $clean;
+    }
+
+    private static function validateImageIds($value): array
+    {
+        if (!is_array($value)) {
+            Response::error('Danh sách ảnh cần xóa không hợp lệ.', 422, [
+                'remove_image_ids' => 'Dữ liệu phải là một danh sách ID.',
+            ]);
+        }
+
+        $ids = [];
+        foreach ($value as $rawId) {
+            $id = filter_var($rawId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+            if ($id === false) {
+                Response::error('Danh sách ảnh cần xóa không hợp lệ.', 422);
+            }
+            $ids[] = (int) $id;
+        }
+        return array_values(array_unique(array_slice($ids, 0, self::MAX_IMAGES)));
+    }
+
+    private static function productColors(int $productId): array
+    {
+        $pdo = getDbConnection();
+        $stmt = $pdo->prepare('SELECT colors FROM products WHERE id = ?');
+        $stmt->execute([$productId]);
+        $json = $stmt->fetchColumn();
+        if ($json === false) {
+            Response::error('Không tìm thấy sản phẩm.', 404);
+        }
+        return is_string($json) ? (json_decode($json, true) ?: []) : [];
+    }
+
+    private static function detachRemovedImageColors(int $productId, array $colors): void
+    {
+        $pdo = getDbConnection();
+        if (!$colors) {
+            $pdo->prepare('UPDATE product_images SET color = NULL WHERE product_id = ?')->execute([$productId]);
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($colors), '?'));
+        $params = array_merge([$productId], $colors);
+        $pdo->prepare(
+            "UPDATE product_images SET color = NULL
+             WHERE product_id = ? AND color IS NOT NULL AND color NOT IN ($placeholders)"
+        )->execute($params);
     }
 
     private static function uniqueSlug(string $name, ?int $ignoreId = null): string
