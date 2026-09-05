@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   User2,
   ChevronUp,
-  Plus,
   Shirt,
   Users as UsersIcon,
   Tags,
@@ -36,11 +35,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetTrigger } from "@/components/ui/sheet";
-import AddOrder from "@/components/forms/AddOrder";
-import AddUser from "@/components/forms/AddUser";
-import AddCategory from "@/components/forms/AddCategory";
-import AddProduct from "@/components/forms/AddProduct";
 
 const AppSidebar = () => {
   const pathname = usePathname();
@@ -117,28 +111,6 @@ const AppSidebar = () => {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <SidebarMenuButton>
-                      <Plus />
-                      Thêm sản phẩm
-                    </SidebarMenuButton>
-                  </SheetTrigger>
-                  <AddProduct />
-                </Sheet>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <SidebarMenuButton>
-                      <Tags />
-                      Thêm danh mục
-                    </SidebarMenuButton>
-                  </SheetTrigger>
-                  <AddCategory />
-                </Sheet>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -186,17 +158,6 @@ const AppSidebar = () => {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <SidebarMenuButton>
-                      <Plus />
-                      Thêm người dùng
-                    </SidebarMenuButton>
-                  </SheetTrigger>
-                  <AddUser />
-                </Sheet>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -215,17 +176,6 @@ const AppSidebar = () => {
                     Tất cả đơn hàng
                   </Link>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <SidebarMenuButton>
-                      <Plus />
-                      Thêm đơn hàng
-                    </SidebarMenuButton>
-                  </SheetTrigger>
-                  <AddOrder />
-                </Sheet>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
