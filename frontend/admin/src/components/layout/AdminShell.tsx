@@ -56,9 +56,11 @@ const AdminShell = ({
   return (
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
-      <main className="w-full">
+      <main className="min-w-0 flex-1 bg-muted/20">
         <Navbar />
-        <div className="px-4">{children}</div>
+        <div className="mx-auto w-full max-w-[1600px] px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
+          {children}
+        </div>
       </main>
     </SidebarProvider>
   );
