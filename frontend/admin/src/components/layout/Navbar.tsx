@@ -16,6 +16,7 @@ import { useTheme } from "next-themes";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import useAuthStore from "@/stores/authStore";
 import { toast } from "react-toastify";
+import { resolveImageUrl } from "@/lib/api";
 
 const pageTitles: Record<string, string> = {
   "/": "Tổng quan",
@@ -24,6 +25,7 @@ const pageTitles: Record<string, string> = {
   "/blog": "Bài viết",
   "/users": "Người dùng",
   "/payments": "Đơn hàng",
+  "/marketing": "Liên hệ & nhận tin",
 };
 
 const Navbar = () => {
@@ -51,7 +53,7 @@ const Navbar = () => {
     "Tổng quan";
 
   return (
-    <nav className="px-4 py-3 flex items-center justify-between sticky top-0 bg-background/90 backdrop-blur-sm z-10 border-b">
+    <nav className="sticky top-0 z-40 flex min-h-16 items-center justify-between border-b bg-background/90 px-4 py-3 backdrop-blur-md sm:px-6 lg:px-8">
       {/* LEFT */}
       <div className="flex items-center gap-3">
         <SidebarTrigger />
@@ -84,7 +86,9 @@ const Navbar = () => {
         <DropdownMenu>
           <DropdownMenuTrigger>
             <Avatar className="ring-2 ring-transparent hover:ring-gold/50 transition-all">
-              <AvatarImage src={undefined} />
+              <AvatarImage
+                src={user?.avatar ? resolveImageUrl(user.avatar) : undefined}
+              />
               <AvatarFallback>{initials || "AD"}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
