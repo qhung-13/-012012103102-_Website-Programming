@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Mail, MessageSquare, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { apiFetch, apiFetchAll, ApiError } from "@/lib/api";
 import useAuthStore from "@/stores/authStore";
 
@@ -28,6 +29,10 @@ type Subscriber = {
   updated_at: string;
 };
 
+type DeleteTarget =
+  | { kind: "message"; item: ContactMessage }
+  | { kind: "subscriber"; item: Subscriber };
+
 const messageStatusLabels: Record<MessageStatus, string> = {
   new: "Mới",
   read: "Đã đọc",
@@ -50,28 +55,35 @@ export default function MarketingPage() {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const load = useCallback(async (showSpinner = true) => {
-    if (showSpinner) setLoading(true);
-    else setRefreshing(true);
-    try {
-      const [messageRows, subscriberRows] = await Promise.all([
-        apiFetchAll<ContactMessage>("/contact-messages?limit=100", { token }),
-        apiFetchAll<Subscriber>("/newsletter-subscribers?limit=100", { token }),
-      ]);
-      setMessages(messageRows);
-      setSubscribers(subscriberRows);
-    } catch (error) {
-      toast.error(
-        error instanceof ApiError
-          ? error.message
-          : "Không thể tải dữ liệu liên hệ.",
-      );
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [token]);
+  const load = useCallback(
+    async (showSpinner = true) => {
+      if (showSpinner) setLoading(true);
+      else setRefreshing(true);
+      try {
+        const [messageRows, subscriberRows] = await Promise.all([
+          apiFetchAll<ContactMessage>("/contact-messages?limit=100", { token }),
+          apiFetchAll<Subscriber>("/newsletter-subscribers?limit=100", {
+            token,
+          }),
+        ]);
+        setMessages(messageRows);
+        setSubscribers(subscriberRows);
+      } catch (error) {
+        toast.error(
+          error instanceof ApiError
+            ? error.message
+            : "Không thể tải dữ liệu liên hệ.",
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [token],
+  );
 
   useEffect(() => {
     load();
@@ -83,7 +95,9 @@ export default function MarketingPage() {
   ) => {
     const previous = messages;
     setMessages((items) =>
-      items.map((item) => (item.id === message.id ? { ...item, status } : item)),
+      items.map((item) =>
+        item.id === message.id ? { ...item, status } : item,
+      ),
     );
     try {
       await apiFetch(`/contact-messages/${message.id}`, {
@@ -98,22 +112,6 @@ export default function MarketingPage() {
         error instanceof ApiError
           ? error.message
           : "Không thể cập nhật tin nhắn.",
-      );
-    }
-  };
-
-  const deleteMessage = async (message: ContactMessage) => {
-    if (!confirm(`Xóa tin nhắn “${message.subject}”?`)) return;
-    try {
-      await apiFetch(`/contact-messages/${message.id}`, {
-        method: "DELETE",
-        token,
-      });
-      setMessages((items) => items.filter((item) => item.id !== message.id));
-      toast.success("Đã xóa tin nhắn.");
-    } catch (error) {
-      toast.error(
-        error instanceof ApiError ? error.message : "Không thể xóa tin nhắn.",
       );
     }
   };
@@ -145,23 +143,38 @@ export default function MarketingPage() {
     }
   };
 
-  const deleteSubscriber = async (subscriber: Subscriber) => {
-    if (!confirm(`Xóa email “${subscriber.email}” khỏi danh sách?`)) return;
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await apiFetch(`/newsletter-subscribers/${subscriber.id}`, {
-        method: "DELETE",
-        token,
-      });
-      setSubscribers((items) =>
-        items.filter((item) => item.id !== subscriber.id),
-      );
-      toast.success("Đã xóa người đăng ký.");
+      if (deleteTarget.kind === "message") {
+        await apiFetch(`/contact-messages/${deleteTarget.item.id}`, {
+          method: "DELETE",
+          token,
+        });
+        setMessages((items) =>
+          items.filter((item) => item.id !== deleteTarget.item.id),
+        );
+        toast.success("Đã xóa tin nhắn.");
+      } else {
+        await apiFetch(`/newsletter-subscribers/${deleteTarget.item.id}`, {
+          method: "DELETE",
+          token,
+        });
+        setSubscribers((items) =>
+          items.filter((item) => item.id !== deleteTarget.item.id),
+        );
+        toast.success("Đã xóa người đăng ký.");
+      }
+      setDeleteTarget(null);
     } catch (error) {
       toast.error(
         error instanceof ApiError
           ? error.message
-          : "Không thể xóa người đăng ký.",
+          : "Không thể xóa mục đã chọn.",
       );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -215,7 +228,10 @@ export default function MarketingPage() {
                 <tbody>
                   {messages.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                      <td
+                        colSpan={6}
+                        className="p-8 text-center text-muted-foreground"
+                      >
                         Chưa có tin nhắn.
                       </td>
                     </tr>
@@ -224,9 +240,13 @@ export default function MarketingPage() {
                       <tr key={message.id} className="border-t align-top">
                         <td className="p-3">
                           <p className="font-medium">{message.name}</p>
-                          <p className="text-xs text-muted-foreground">{message.email}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {message.email}
+                          </p>
                         </td>
-                        <td className="max-w-52 p-3 font-medium">{message.subject}</td>
+                        <td className="max-w-52 p-3 font-medium">
+                          {message.subject}
+                        </td>
                         <td className="max-w-80 p-3 text-muted-foreground">
                           <p className="line-clamp-2">{message.message}</p>
                         </td>
@@ -259,7 +279,12 @@ export default function MarketingPage() {
                             size="icon"
                             variant="ghost"
                             aria-label={`Xóa tin nhắn ${message.id}`}
-                            onClick={() => deleteMessage(message)}
+                            onClick={() =>
+                              setDeleteTarget({
+                                kind: "message",
+                                item: message,
+                              })
+                            }
                           >
                             <Trash2 className="text-destructive" />
                           </Button>
@@ -293,7 +318,10 @@ export default function MarketingPage() {
                 <tbody>
                   {subscribers.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                      <td
+                        colSpan={4}
+                        className="p-8 text-center text-muted-foreground"
+                      >
                         Chưa có người đăng ký.
                       </td>
                     </tr>
@@ -330,7 +358,12 @@ export default function MarketingPage() {
                             size="icon"
                             variant="ghost"
                             aria-label={`Xóa người đăng ký ${subscriber.id}`}
-                            onClick={() => deleteSubscriber(subscriber)}
+                            onClick={() =>
+                              setDeleteTarget({
+                                kind: "subscriber",
+                                item: subscriber,
+                              })
+                            }
                           >
                             <Trash2 className="text-destructive" />
                           </Button>
@@ -344,6 +377,25 @@ export default function MarketingPage() {
           </section>
         </>
       )}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={
+          deleteTarget?.kind === "subscriber"
+            ? "Xóa người đăng ký?"
+            : "Xóa tin nhắn?"
+        }
+        description={
+          deleteTarget?.kind === "subscriber"
+            ? `Email “${deleteTarget.item.email}” sẽ bị xóa khỏi danh sách.`
+            : deleteTarget
+              ? `Tin nhắn “${deleteTarget.item.subject}” sẽ bị xóa vĩnh viễn.`
+              : ""
+        }
+        confirmLabel="Xóa"
+        pending={deleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
