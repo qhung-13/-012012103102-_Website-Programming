@@ -42,6 +42,12 @@ const ProductCard = ({ product }: { product: ProductType }) => {
   const router = useRouter();
 
   const wishlisted = hasHydrated && isWishlisted(product.id);
+  const detailParams = new URLSearchParams();
+  if (productTypes.color) detailParams.set("color", productTypes.color);
+  if (productTypes.size) detailParams.set("size", productTypes.size);
+  const productHref = `/products/${product.slug ?? product.id}${
+    detailParams.size ? `?${detailParams.toString()}` : ""
+  }`;
 
   const handleToggleWishlist = async () => {
     if (!authHydrated || !token) {
@@ -87,11 +93,15 @@ const ProductCard = ({ product }: { product: ProductType }) => {
   return (
     <div className="relative group bg-white rounded-2xl border border-line overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
       {/* IMAGE */}
-      <Link href={`/products/${product.slug ?? product.id}`}>
+      <Link href={productHref}>
         <div className="relative aspect-[2/3] bg-paper-dim">
           <Image
             src={resolveImageUrl(
               product.images[productTypes.color] ??
+                product.imageGallery.find(
+                  (image) => image.color === productTypes.color,
+                )?.path ??
+                product.imageGallery[0]?.path ??
                 Object.values(product.images)[0],
             )}
             alt={product.name}
