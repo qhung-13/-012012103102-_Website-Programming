@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import BlogEditor from "@/components/forms/BlogEditor";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 
 type BlogRow = {
@@ -23,6 +24,8 @@ export default function BlogAdminPage() {
   const token = useAuthStore((state) => state.token);
   const [posts, setPosts] = useState<BlogRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<BlogRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -43,16 +46,20 @@ export default function BlogAdminPage() {
     return () => window.removeEventListener("roxbusi:blog-changed", load);
   }, [load]);
 
-  const remove = async (post: BlogRow) => {
-    if (!confirm(`Xóa bài viết “${post.title}”?`)) return;
+  const remove = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await apiFetch(`/blog/${post.id}`, { method: "DELETE", token });
+      await apiFetch(`/blog/${deleteTarget.id}`, { method: "DELETE", token });
       toast.success("Đã xóa bài viết.");
-      setPosts((items) => items.filter((item) => item.id !== post.id));
+      setPosts((items) => items.filter((item) => item.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (error) {
       toast.error(
         error instanceof ApiError ? error.message : "Không thể xóa bài viết.",
       );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -130,7 +137,7 @@ export default function BlogAdminPage() {
                         size="icon"
                         variant="ghost"
                         aria-label={`Xóa ${post.title}`}
-                        onClick={() => remove(post)}
+                        onClick={() => setDeleteTarget(post)}
                       >
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
@@ -142,6 +149,19 @@ export default function BlogAdminPage() {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Xóa bài viết?"
+        description={
+          deleteTarget
+            ? `Bài viết “${deleteTarget.title}” sẽ bị xóa vĩnh viễn.`
+            : ""
+        }
+        confirmLabel="Xóa bài viết"
+        pending={deleting}
+        onConfirm={remove}
+      />
     </div>
   );
 }
