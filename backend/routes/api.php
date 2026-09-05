@@ -65,6 +65,7 @@ $router->delete('/wishlist/{id}', [WishlistController::class, 'destroy']);
 
 // -------------------- UPLOAD --------------------
 $router->post('/upload', [UploadController::class, 'store']);
+$router->delete('/upload', [UploadController::class, 'destroy']);
 
 // -------------------- CONTACT / NEWSLETTER --------------------
 $router->post('/contact', [MarketingController::class, 'contact']);
