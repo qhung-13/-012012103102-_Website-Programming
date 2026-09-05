@@ -6,7 +6,11 @@ import { DataTable } from "./data-table";
 import useAuthStore from "@/stores/authStore";
 import { apiFetch, apiFetchAll, ApiError, resolveImageUrl } from "@/lib/api";
 import { toast } from "react-toastify";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetTrigger } from "@/components/ui/sheet";
+import AddUser from "@/components/forms/AddUser";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type ApiUser = {
   id: number;
@@ -30,6 +34,8 @@ const UsersPage = () => {
   const { token } = useAuthStore();
   const [data, setData] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTargets, setDeleteTargets] = useState<User[]>([]);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -54,24 +60,17 @@ const UsersPage = () => {
     return () => window.removeEventListener("roxbusi:users-changed", load);
   }, [load]);
 
-  const handleDelete = async (user: User) => {
-    if (!confirm(`Xóa “${user.fullName}”? Thao tác này không thể hoàn tác.`))
-      return;
-    try {
-      await apiFetch(`/users/${user.id}`, { method: "DELETE", token });
-      toast.success("Đã xóa người dùng.");
-      setData((prev) => prev.filter((u) => u.id !== user.id));
-    } catch (err) {
-      toast.error(
-        err instanceof ApiError ? err.message : "Không thể xóa người dùng.",
-      );
-    }
-  };
+  const handleDelete = (user: User) => setDeleteTargets([user]);
 
   const handleBulkDelete = async (users: User[]) => {
-    if (!confirm(`Xóa ${users.length} người dùng đã chọn?`)) return;
+    setDeleteTargets(users);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTargets.length === 0) return;
+    setDeleting(true);
     const results = await Promise.allSettled(
-      users.map((user) =>
+      deleteTargets.map((user) =>
         apiFetch(`/users/${user.id}`, { method: "DELETE", token }),
       ),
     );
@@ -83,18 +82,28 @@ const UsersPage = () => {
       toast.error(
         `Không thể xóa ${failed} người dùng (tài khoản đang đăng nhập sẽ được bảo vệ).`,
       );
-    else toast.success(`Đã xóa ${users.length} người dùng.`);
+    else toast.success(`Đã xóa ${deleteTargets.length} người dùng.`);
+    setDeleteTargets([]);
+    setDeleting(false);
   };
 
   return (
     <div className="py-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Tất cả người dùng
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Có {data.length} tài khoản đã đăng ký.
-        </p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Người dùng</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Có {data.length} tài khoản đã đăng ký.
+          </p>
+        </div>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4" /> Thêm người dùng
+            </Button>
+          </SheetTrigger>
+          <AddUser onCreated={load} />
+        </Sheet>
       </div>
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground py-12 justify-center">
@@ -107,6 +116,19 @@ const UsersPage = () => {
           onDeleteSelected={handleBulkDelete}
         />
       )}
+      <ConfirmDialog
+        open={deleteTargets.length > 0}
+        onOpenChange={(open) => !open && setDeleteTargets([])}
+        title={
+          deleteTargets.length === 1
+            ? `Xóa “${deleteTargets[0]?.fullName}”?`
+            : `Xóa ${deleteTargets.length} người dùng?`
+        }
+        description="Tài khoản và dữ liệu liên quan sẽ bị xóa. Tài khoản quản trị đang đăng nhập vẫn được backend bảo vệ."
+        confirmLabel="Xóa người dùng"
+        pending={deleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };
