@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
 import AddCategory from "@/components/forms/AddCategory";
 import { Loader2, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Category = {
   id: number;
@@ -23,6 +24,8 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -66,21 +69,25 @@ export default function CategoriesPage() {
     }
   };
 
-  const remove = async (category: Category) => {
-    if (
-      !confirm(
-        `Xóa danh mục “${category.name}”? Sản phẩm trong danh mục sẽ chuyển sang trạng thái chưa phân loại.`,
-      )
-    )
-      return;
+  const remove = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await apiFetch(`/categories/${category.id}`, { method: "DELETE", token });
+      await apiFetch(`/categories/${deleteTarget.id}`, {
+        method: "DELETE",
+        token,
+      });
       toast.success("Đã xóa danh mục.");
-      setCategories((items) => items.filter((item) => item.id !== category.id));
+      setCategories((items) =>
+        items.filter((item) => item.id !== deleteTarget.id),
+      );
+      setDeleteTarget(null);
     } catch (error) {
       toast.error(
         error instanceof ApiError ? error.message : "Không thể xóa danh mục.",
       );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -183,7 +190,7 @@ export default function CategoriesPage() {
                             size="icon"
                             variant="ghost"
                             aria-label={`Xóa ${category.name}`}
-                            onClick={() => remove(category)}
+                            onClick={() => setDeleteTarget(category)}
                           >
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
@@ -197,6 +204,15 @@ export default function CategoriesPage() {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={`Xóa “${deleteTarget?.name ?? "danh mục"}”?`}
+        description="Sản phẩm vẫn được giữ lại và sẽ chuyển sang trạng thái chưa phân loại."
+        confirmLabel="Xóa danh mục"
+        pending={deleting}
+        onConfirm={remove}
+      />
     </div>
   );
 }
