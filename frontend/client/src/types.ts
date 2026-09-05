@@ -11,7 +11,15 @@ export type ProductType = {
   sizes: string[];
   colors: string[];
   images: Record<string, string>;
+  imageGallery: ProductImageType[];
   category: string;
+};
+
+export type ProductImageType = {
+  id: number;
+  color: string | null;
+  path: string;
+  sortOrder: number;
 };
 
 /** Raw shape returned by the PHP backend for a product (snake_case). */
@@ -30,12 +38,27 @@ export type ApiProductType = {
   category_name: string | null;
   category_slug: string | null;
   images: Record<string, string>;
+  image_gallery?: {
+    id: number;
+    color: string | null;
+    image_path: string;
+    sort_order: number;
+  }[];
+  primary_image?: string | null;
   created_at: string;
   updated_at: string;
 };
 
 /** Adapts a backend product row into the shape the UI components expect. */
 export function mapApiProduct(p: ApiProductType): ProductType {
+  const legacyGallery = Object.entries(p.images ?? {}).map(
+    ([color, path], index): ProductImageType => ({
+      id: -(index + 1),
+      color: color === "default" ? null : color,
+      path,
+      sortOrder: index,
+    }),
+  );
   return {
     id: p.id,
     name: p.name,
@@ -47,6 +70,14 @@ export function mapApiProduct(p: ApiProductType): ProductType {
     sizes: p.sizes ?? [],
     colors: p.colors ?? [],
     images: p.images ?? {},
+    imageGallery: (p.image_gallery ?? []).length
+      ? (p.image_gallery ?? []).map((image) => ({
+          id: image.id,
+          color: image.color,
+          path: image.image_path,
+          sortOrder: image.sort_order,
+        }))
+      : legacyGallery,
     category: p.category_slug ?? "",
   };
 }
