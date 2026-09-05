@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 800" role="img" aria-labelledby="title description">
+  <title id="title">Chưa có ảnh sản phẩm</title>
+  <desc id="description">Ảnh giữ chỗ cho sản phẩm chưa được tải ảnh lên.</desc>
+  <rect width="640" height="800" fill="#f1efe9"/>
+  <rect x="180" y="244" width="280" height="250" rx="32" fill="none" stroke="#cfc9bc" stroke-width="12"/>
+  <circle cx="270" cy="330" r="34" fill="#d8a93a" opacity=".75"/>
+  <path d="M200 458l96-92 58 55 48-42 38 37v58H200z" fill="#d9d4ca"/>
+  <text x="320" y="570" fill="#726e68" font-family="Arial, sans-serif" font-size="24" text-anchor="middle">Chưa có ảnh</text>
+</svg>
