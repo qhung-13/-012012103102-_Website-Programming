@@ -6,7 +6,11 @@ import { DataTable } from "./data-table";
 import useAuthStore from "@/stores/authStore";
 import { apiFetch, apiFetchAll, ApiError } from "@/lib/api";
 import { toast } from "react-toastify";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetTrigger } from "@/components/ui/sheet";
+import AddOrder from "@/components/forms/AddOrder";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type ApiOrder = {
   id: number;
@@ -35,6 +39,8 @@ const PaymentsPage = () => {
   const { token } = useAuthStore();
   const [data, setData] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteTargets, setDeleteTargets] = useState<Payment[]>([]);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,26 +92,17 @@ const PaymentsPage = () => {
     }
   };
 
-  const handleDelete = async (payment: Payment) => {
-    if (
-      !confirm(`Xóa đơn hàng #${payment.id}? Thao tác này không thể hoàn tác.`)
-    )
-      return;
-    try {
-      await apiFetch(`/orders/${payment.id}`, { method: "DELETE", token });
-      toast.success("Đã xóa đơn hàng.");
-      setData((prev) => prev.filter((p) => p.id !== payment.id));
-    } catch (err) {
-      toast.error(
-        err instanceof ApiError ? err.message : "Không thể xóa đơn hàng.",
-      );
-    }
-  };
+  const handleDelete = (payment: Payment) => setDeleteTargets([payment]);
 
   const handleBulkDelete = async (payments: Payment[]) => {
-    if (!confirm(`Xóa ${payments.length} đơn hàng đã chọn?`)) return;
+    setDeleteTargets(payments);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteTargets.length === 0) return;
+    setDeleting(true);
     const results = await Promise.allSettled(
-      payments.map((payment) =>
+      deleteTargets.map((payment) =>
         apiFetch(`/orders/${payment.id}`, { method: "DELETE", token }),
       ),
     );
@@ -114,18 +111,28 @@ const PaymentsPage = () => {
     ).length;
     await load();
     if (failed) toast.error(`Không thể xóa ${failed} đơn hàng.`);
-    else toast.success(`Đã xóa ${payments.length} đơn hàng.`);
+    else toast.success(`Đã xóa ${deleteTargets.length} đơn hàng.`);
+    setDeleteTargets([]);
+    setDeleting(false);
   };
 
   return (
     <div className="py-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Tất cả đơn hàng
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Có {data.length} đơn hàng được ghi nhận.
-        </p>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Đơn hàng</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Có {data.length} đơn hàng được ghi nhận.
+          </p>
+        </div>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4" /> Thêm đơn hàng
+            </Button>
+          </SheetTrigger>
+          <AddOrder onCreated={load} />
+        </Sheet>
       </div>
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground py-12 justify-center">
@@ -138,6 +145,19 @@ const PaymentsPage = () => {
           onDeleteSelected={handleBulkDelete}
         />
       )}
+      <ConfirmDialog
+        open={deleteTargets.length > 0}
+        onOpenChange={(open) => !open && setDeleteTargets([])}
+        title={
+          deleteTargets.length === 1
+            ? `Xóa đơn hàng #${deleteTargets[0]?.id}?`
+            : `Xóa ${deleteTargets.length} đơn hàng?`
+        }
+        description="Tồn kho sẽ được hoàn lại cho đơn đang chờ hoặc đang xử lý. Thao tác xóa không thể hoàn tác."
+        confirmLabel="Xóa đơn hàng"
+        pending={deleting}
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 };
