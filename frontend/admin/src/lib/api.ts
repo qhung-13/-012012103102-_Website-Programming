@@ -110,12 +110,18 @@ export async function apiFetchAll<T>(
   return rows;
 }
 
-/** Uploads one or more files via multipart/form-data. Returns the array of { path, color }. */
+export type UploadedImage = {
+  filename: string;
+  path: string;
+  color: string | null;
+};
+
+/** Uploads one or more files via multipart/form-data. */
 export async function apiUpload(
   files: { file: File; color?: string }[],
   type: "products" | "blog" | "avatars",
   token: string | null,
-): Promise<{ filename: string; path: string; color: string | null }[]> {
+): Promise<UploadedImage[]> {
   const baseUrl = requireApiUrl();
   const formData = new FormData();
   files.forEach(({ file, color }) => {
@@ -134,9 +140,7 @@ export async function apiUpload(
     throw new ApiError("Không thể kết nối máy chủ để tải ảnh.", 0);
   }
 
-  let json: ApiResponse<
-    { filename: string; path: string; color: string | null }[]
-  > | null = null;
+  let json: ApiResponse<UploadedImage[]> | null = null;
   try {
     const raw = await res.text();
     json = raw ? JSON.parse(raw) : null;
@@ -151,6 +155,19 @@ export async function apiUpload(
     );
   }
   return json.data;
+}
+
+/** Best-effort cleanup for uploaded files when the following form request fails. */
+export async function apiDeleteUploads(
+  paths: string[],
+  token: string | null,
+): Promise<void> {
+  if (paths.length === 0) return;
+  await apiFetch("/upload", {
+    method: "DELETE",
+    token,
+    body: { paths },
+  });
 }
 
 export function getApiUrl() {
