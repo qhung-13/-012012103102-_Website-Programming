@@ -11,12 +11,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import Image from "next/image";
 import { resolveImageUrl } from "@/lib/api";
 import { Sheet } from "@/components/ui/sheet";
 import EditProduct from "@/components/forms/EditProduct";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import type { ProductGalleryImage } from "@/components/forms/ProductImageManager";
 
 export type Product = {
   id: string | number;
@@ -29,6 +31,7 @@ export type Product = {
   sizes: string[];
   colors: string[];
   images: Record<string, string>;
+  image_gallery: ProductGalleryImage[];
   category_id: number | null;
   status: "active" | "draft";
 };
@@ -111,7 +114,7 @@ export const getColumns = (
       const firstImage =
         product.images[product.colors[0]] ?? Object.values(product.images)[0];
       return (
-        <div className="w-9 h-9 relative rounded-full overflow-hidden bg-muted">
+        <div className="relative h-11 w-11 overflow-hidden rounded-lg border bg-muted">
           <Image
             src={resolveImageUrl(firstImage)}
             alt={product.name}
@@ -125,6 +128,14 @@ export const getColumns = (
   {
     accessorKey: "name",
     header: "Tên",
+    cell: ({ row }) => (
+      <div className="min-w-44">
+        <p className="font-medium">{row.original.name}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          #{row.original.id} · {row.original.image_gallery.length} ảnh
+        </p>
+      </div>
+    ),
   },
   {
     accessorKey: "category_name",
@@ -133,17 +144,7 @@ export const getColumns = (
   },
   {
     accessorKey: "price",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Giá
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
+    header: "Giá",
     cell: ({ row }) => `$${Number(row.original.price).toFixed(2)}`,
   },
   {
@@ -153,8 +154,13 @@ export const getColumns = (
   {
     accessorKey: "status",
     header: "Trạng thái",
-    cell: ({ row }) =>
-      row.original.status === "active" ? "Đang bán" : "Bản nháp",
+    cell: ({ row }) => (
+      <Badge
+        variant={row.original.status === "active" ? "default" : "secondary"}
+      >
+        {row.original.status === "active" ? "Đang bán" : "Bản nháp"}
+      </Badge>
+    ),
   },
   {
     id: "actions",
