@@ -1,7 +1,7 @@
 import ProductInteraction from "@/components/product/ProductInteraction";
-import { apiFetch, resolveImageUrl } from "@/lib/api";
+import ProductGallery from "@/components/product/ProductGallery";
+import { apiFetch } from "@/lib/api";
 import { ApiProductType, mapApiProduct } from "@/types";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 
 async function getProduct(idOrSlug: string) {
@@ -23,7 +23,10 @@ export const generateMetadata = async ({
   if (!product) return {};
   return {
     title: `${product.name} — Roxbusi`,
-    description: product.description,
+    description: product.description
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
   };
 };
 
@@ -32,7 +35,7 @@ const ProductPage = async ({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ color: string; size: string }>;
+  searchParams: Promise<{ color?: string; size?: string }>;
 }) => {
   const { id } = await params;
   const { size, color } = await searchParams;
@@ -41,24 +44,25 @@ const ProductPage = async ({
 
   if (!product) return notFound();
 
-  const selectedSize = size || product.sizes[0] || "";
-  const selectedColor = color || product.colors[0] || "";
+  const selectedSize =
+    (size && product.sizes.includes(size) ? size : undefined) ??
+    product.sizes[0] ??
+    "";
+  const selectedColor =
+    (color && product.colors.includes(color) ? color : undefined) ??
+    product.colors[0] ??
+    "";
 
   return (
     <div className="flex flex-col gap-8 lg:flex-row lg:gap-16 mt-8">
-      {/* IMAGE */}
-      <div className="w-full lg:w-1/2 relative aspect-[4/5] rounded-3xl overflow-hidden bg-paper-dim">
-        <Image
-          src={resolveImageUrl(
-            product.images[selectedColor] ?? Object.values(product.images)[0],
-          )}
-          alt={product.name}
-          fill
-          className="object-contain p-6"
+      {/* IMAGE GALLERY */}
+      <div className="w-full lg:w-1/2">
+        <ProductGallery
+          images={product.imageGallery}
+          selectedColor={selectedColor}
+          productName={product.name}
+          price={product.price}
         />
-        <span className="absolute top-4 left-4 bg-paper/95 backdrop-blur rounded-full px-3 py-1.5 text-sm font-mono font-medium tag-mark">
-          ${product.price.toFixed(2)}
-        </span>
       </div>
       {/* DETAILS */}
       <div className="w-full lg:w-1/2 flex flex-col gap-4">
@@ -66,9 +70,10 @@ const ProductPage = async ({
           Sản phẩm chính hãng Roxbusi
         </span>
         <h1 className="font-display text-4xl tracking-wide">{product.name}</h1>
-        <p className="text-muted text-sm leading-relaxed">
-          {product.description}
-        </p>
+        <div
+          className="text-muted text-sm leading-relaxed [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-gold [&_blockquote]:pl-3 [&_h2]:mt-4 [&_h2]:font-semibold [&_li]:ml-5 [&_ol]:list-decimal [&_p]:mb-2 [&_ul]:list-disc"
+          dangerouslySetInnerHTML={{ __html: product.description }}
+        />
         <h2 className="font-mono text-2xl font-semibold">
           ${product.price.toFixed(2)}
         </h2>
