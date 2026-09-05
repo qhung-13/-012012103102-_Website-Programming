@@ -77,7 +77,8 @@ CREATE TABLE product_images (
   image_path VARCHAR(255) NOT NULL,
   sort_order INT UNSIGNED NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+  FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+  INDEX idx_product_images_product_sort (product_id, sort_order, id)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------
